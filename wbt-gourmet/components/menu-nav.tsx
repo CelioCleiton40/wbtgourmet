@@ -1,90 +1,123 @@
 'use client';
 
-import { useMemo } from 'react';
-import { menu } from '@/data/menu';
+import { useEffect, useState } from 'react';
 import type { MenuSection } from '@/data/menu';
 
 interface MenuNavProps {
   sections: MenuSection[];
 }
 
-export function MenuNav({ sections }: MenuNavProps) {
-  const availableSections = useMemo(() => {
-    return sections.filter((s) =>
-      s.items.some(
-        (item) =>
-          !item.availability ||
-          item.availability.days.includes(new Date().getDay())
-      )
-    );
-  }, [sections]);
+function isSectionAvailable(section: MenuSection): boolean {
+  const today = new Date().getDay();
 
-  function scrollTo(id: string) {
-    const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }
+  return section.items.some(
+    (item) =>
+      !item.availability ||
+      item.availability.days.includes(today),
+  );
+}
+
+export function MenuNav({ sections }: MenuNavProps) {
+  const [activeSection, setActiveSection] = useState<string>('');
+
+  const availableSections = sections.filter(isSectionAvailable);
+
+  useEffect(() => {
+    if (!availableSections.length) return;
+
+    const elements = availableSections
+      .map((section) => document.getElementById(section.id))
+      .filter((element): element is HTMLElement => Boolean(element));
+
+    if (!elements.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort(
+            (a, b) =>
+              a.boundingClientRect.top -
+              b.boundingClientRect.top,
+          );
+
+        if (visible[0]?.target.id) {
+          setActiveSection(visible[0].target.id);
+        }
+      },
+      {
+        rootMargin: '-120px 0px -60% 0px',
+        threshold: 0,
+      },
+    );
+
+    elements.forEach((element) => observer.observe(element));
+
+    return () => observer.disconnect();
+  }, [availableSections]);
+
+  const scrollToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+
+    setActiveSection(id);
+  };
 
   return (
-    <div
-      style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 30,
-        background: 'rgba(18, 22, 27, 0.92)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        borderBottom: '1px solid rgba(239,230,208,0.06)',
-        padding: '8px 16px',
-      }}
+    <nav
+      aria-label="Categorias do cardápio"
+      className="
+        sticky top-0 z-30
+        border-b border-sand/[0.06]
+        bg-court-night/92
+        px-4 py-2
+        backdrop-blur-md
+        supports-[backdrop-filter]:bg-court-night/75
+      "
     >
-      <div
-        style={{
-          display: 'flex',
-          gap: '8px',
-          overflowX: 'auto',
-          paddingBottom: '4px',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-        }}
-        className="no-scrollbar"
-      >
-        {availableSections.map((section) => (
-          <button
-            key={section.id}
-            id={`nav-${section.id}`}
-            onClick={() => scrollTo(section.id)}
-            style={{
-              flexShrink: 0,
-              padding: '6px 14px',
-              borderRadius: '999px',
-              background: 'rgba(239,230,208,0.06)',
-              border: '1px solid rgba(239,230,208,0.08)',
-              color: '#93A19E',
-              fontFamily: 'var(--font-anton), sans-serif',
-              fontSize: '11px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              transition: 'background 0.15s, color 0.15s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#D4F13A';
-              e.currentTarget.style.color = '#12161B';
-              e.currentTarget.style.border = 'none';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(239,230,208,0.06)';
-              e.currentTarget.style.color = '#93A19E';
-              e.currentTarget.style.border = '1px solid rgba(239,230,208,0.08)';
-            }}
-          >
-            {section.emoji} {section.title.split(' ')[0]}
-          </button>
-        ))}
+      <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
+        {availableSections.map((section) => {
+          const isActive = activeSection === section.id;
+
+          return (
+            <button
+              key={section.id}
+              type="button"
+              aria-current={isActive ? 'true' : undefined}
+              onClick={() => scrollToSection(section.id)}
+              className={`
+                shrink-0
+                whitespace-nowrap
+                rounded-full
+                border
+                px-3.5 py-1.5
+                font-display
+                text-[11px]
+                uppercase
+                tracking-[0.06em]
+                transition-all
+                duration-150
+                focus-visible:outline-2
+                focus-visible:outline-ball
+                focus-visible:outline-offset-2
+                active:scale-[0.98]
+                ${
+                  isActive
+                    ? 'border-ball bg-ball text-court-night'
+                    : 'border-sand/[0.08] bg-sand/[0.06] text-ink-muted hover:border-ball hover:bg-ball hover:text-court-night'
+                }
+              `}
+            >
+              <span aria-hidden="true">
+                {section.emoji}
+              </span>{' '}
+              {section.title.split(' ')[0]}
+            </button>
+          );
+        })}
       </div>
-    </div>
+    </nav>
   );
 }

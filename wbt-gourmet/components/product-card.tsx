@@ -1,8 +1,11 @@
 'use client';
 
+import Image from 'next/image';
 import { useCartStore } from '@/store/use-cart-store';
 import type { MenuItem } from '@/data/menu';
-import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Minus } from 'lucide-react';
 
 const currency = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -30,190 +33,84 @@ export function ProductCard({ item }: ProductCardProps) {
 
   return (
     <div
-      style={{
-        background: 'rgba(239, 230, 208, 0.97)',
-        borderRadius: '16px',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        boxShadow: '0 2px 16px rgba(0,0,0,0.3)',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)';
-        (e.currentTarget as HTMLDivElement).style.boxShadow = '0 8px 32px rgba(0,0,0,0.4)';
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)';
-        (e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 16px rgba(0,0,0,0.3)';
-      }}
+      className="group relative flex flex-col overflow-hidden rounded-2xl border border-sand/10 bg-sand/[0.04] p-4 transition-all duration-300 hover:-translate-y-1 hover:border-ball/40 hover:bg-sand/[0.07] hover:shadow-[0_12px_32px_rgba(0,0,0,0.5)] backdrop-blur-md"
     >
-      {/* Imagem */}
+      {/* Imagem do Produto */}
       {item.image && (
-        <div style={{ position: 'relative', height: '140px', width: '100%', overflow: 'hidden' }}>
+        <div className="relative mb-3.5 h-44 w-full overflow-hidden rounded-xl bg-court-night/60">
           <Image
             src={item.image}
             alt={item.name}
             fill
-            style={{ objectFit: 'cover' }}
-            sizes="(max-width: 640px) 100vw, 50vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
-          {/* Gradiente sobre imagem */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'linear-gradient(to bottom, transparent 40%, rgba(239,230,208,0.95) 100%)',
-            }}
-          />
+          <div className="absolute inset-0 bg-gradient-to-t from-court-night/80 via-transparent to-transparent" />
         </div>
       )}
 
-      {/* Conteúdo */}
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'flex-end',
-          justifyContent: 'space-between',
-          gap: '12px',
-          padding: '14px 16px',
-        }}
-      >
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <p
-            style={{
-              fontFamily: 'var(--font-manrope), sans-serif',
-              fontWeight: 600,
-              fontSize: '14px',
-              lineHeight: 1.3,
-              color: '#12161B',
-              wordBreak: 'break-word',
-            }}
-          >
-            {item.name}
-          </p>
+      {/* Detalhes do Produto */}
+      <div className="flex flex-1 flex-col justify-between">
+        <div>
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-body text-base font-bold text-ink group-hover:text-ball transition-colors leading-snug">
+              {item.name}
+            </h3>
+          </div>
+
           {item.description && (
-            <p
-              style={{
-                marginTop: '4px',
-                fontSize: '11px',
-                lineHeight: 1.5,
-                color: 'rgba(18,22,27,0.55)',
-              }}
-            >
+            <p className="mt-1.5 text-xs text-ink-muted leading-relaxed line-clamp-2">
               {item.description}
             </p>
           )}
-          <p
-            style={{
-              marginTop: '8px',
-              fontFamily: 'var(--font-space-mono), monospace',
-              fontSize: '13px',
-              fontWeight: 700,
-              color: '#E8592C',
-            }}
-          >
-            {currency.format(item.price)}
-          </p>
         </div>
 
-        {/* Controle de quantidade */}
-        {qty === 0 ? (
-          <button
-            id={`add-${item.id}`}
-            onClick={() => addItem(item)}
-            aria-label={`Adicionar ${item.name} ao carrinho`}
-            style={{
-              flexShrink: 0,
-              padding: '8px 18px',
-              borderRadius: '999px',
-              background: '#12161B',
-              color: '#D4F13A',
-              fontFamily: 'var(--font-anton), sans-serif',
-              fontSize: '12px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'transform 0.1s, opacity 0.15s',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.85')}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-          >
-            + Add
-          </button>
-        ) : (
-          <div
-            style={{
-              flexShrink: 0,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '4px 6px',
-              borderRadius: '999px',
-              background: '#12161B',
-            }}
-          >
-            <button
-              id={`dec-${item.id}`}
-              onClick={() =>
-                qty === 1 ? removeItem(item.id) : updateQuantity(item.id, qty - 1)
-              }
-              aria-label={`Remover um ${item.name}`}
-              style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '50%',
-                background: 'transparent',
-                border: 'none',
-                color: '#E8592C',
-                fontSize: '18px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'background 0.15s',
-              }}
-            >
-              −
-            </button>
-            <span
-              style={{
-                minWidth: '20px',
-                textAlign: 'center',
-                fontFamily: 'var(--font-space-mono), monospace',
-                fontSize: '13px',
-                color: '#D4F13A',
-              }}
-            >
-              {qty}
-            </span>
-            <button
-              id={`inc-${item.id}`}
+        {/* Preço e Ação */}
+        <div className="mt-4 flex items-center justify-between gap-3 pt-3 border-t border-sand/10">
+          <span className="font-mono text-base font-bold text-ember">
+            {currency.format(item.price)}
+          </span>
+
+          {/* Adicionar ou Controles de Quantidade */}
+          {qty === 0 ? (
+            <Button
+              id={`add-${item.id}`}
               onClick={() => addItem(item)}
-              aria-label={`Adicionar mais um ${item.name}`}
-              style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '50%',
-                background: 'transparent',
-                border: 'none',
-                color: '#D4F13A',
-                fontSize: '18px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'background 0.15s',
-              }}
+              aria-label={`Adicionar ${item.name} ao carrinho`}
+              variant="ball"
+              size="sm"
+              className="rounded-full font-bold shadow-[0_2px_10px_rgba(212,241,58,0.2)] hover:shadow-[0_4px_16px_rgba(212,241,58,0.4)]"
             >
-              +
-            </button>
-          </div>
-        )}
+              + Adicionar
+            </Button>
+          ) : (
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-ball/30 bg-court-night/90 p-1 shadow-md">
+              <button
+                id={`dec-${item.id}`}
+                onClick={() =>
+                  qty === 1 ? removeItem(item.id) : updateQuantity(item.id, qty - 1)
+                }
+                aria-label={`Remover um ${item.name}`}
+                className="flex h-7 w-7 items-center justify-center rounded-full text-ember hover:bg-ember/20 transition-colors"
+              >
+                <Minus className="h-3.5 w-3.5 stroke-[2.5]" />
+              </button>
+
+              <span className="min-w-[20px] text-center font-mono text-xs font-bold text-ball">
+                {qty}
+              </span>
+
+              <button
+                id={`inc-${item.id}`}
+                onClick={() => addItem(item)}
+                aria-label={`Adicionar mais um ${item.name}`}
+                className="flex h-7 w-7 items-center justify-center rounded-full text-ball hover:bg-ball/20 transition-colors"
+              >
+                <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

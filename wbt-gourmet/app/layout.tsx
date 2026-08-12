@@ -1,18 +1,24 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Anton, Manrope, Space_Mono } from 'next/font/google';
 import './globals.css';
+
+/* =========================================================
+   FONTS
+   ========================================================= */
 
 const anton = Anton({
   subsets: ['latin'],
   weight: '400',
   variable: '--font-anton',
   display: 'swap',
+  preload: true,
 });
 
 const manrope = Manrope({
   subsets: ['latin'],
   variable: '--font-manrope',
   display: 'swap',
+  preload: true,
 });
 
 const spaceMono = Space_Mono({
@@ -20,9 +26,34 @@ const spaceMono = Space_Mono({
   weight: ['400', '700'],
   variable: '--font-space-mono',
   display: 'swap',
+  preload: true,
 });
 
+/* =========================================================
+   CONSTANTS
+   ========================================================= */
+
 const BASE_URL = 'https://wbtgourmet.com.br';
+const SITE_NAME = 'WBT Gourmet';
+
+const DESCRIPTION =
+  'Peça o cardápio completo da WBT Gourmet: filé mignon, camarão, petiscos, açaí, sanduíches e bebidas premium. Delivery em Mossoró-RN.';
+
+/* =========================================================
+   VIEWPORT
+   ========================================================= */
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#12161B',
+  colorScheme: 'dark',
+};
+
+/* =========================================================
+   METADATA
+   ========================================================= */
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
@@ -31,8 +62,9 @@ export const metadata: Metadata = {
     default: 'WBT Gourmet | Delivery em Mossoró-RN',
     template: '%s | WBT Gourmet',
   },
-  description:
-    'Peça o cardápio completo da WBT Gourmet: filé mignon, camarão, petiscos, açaí, sanduíches e bebidas premium. Delivery rápido em Mossoró-RN direto da WBT Arena.',
+
+  description: DESCRIPTION,
+
   keywords: [
     'WBT Gourmet',
     'delivery Mossoró',
@@ -46,12 +78,24 @@ export const metadata: Metadata = {
     'delivery RN',
     'cardápio WBT',
   ],
-  authors: [{ name: 'WBT Gourmet' }],
-  creator: 'WBT Gourmet',
-  publisher: 'WBT Gourmet',
+
+  authors: [
+    {
+      name: SITE_NAME,
+      url: BASE_URL,
+    },
+  ],
+
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+
+  applicationName: SITE_NAME,
 
   alternates: {
-    canonical: BASE_URL,
+    canonical: '/',
+    languages: {
+      'pt-BR': '/',
+    },
   },
 
   robots: {
@@ -62,6 +106,7 @@ export const metadata: Metadata = {
       follow: true,
       'max-image-preview': 'large',
       'max-snippet': -1,
+      'max-video-preview': -1,
     },
   },
 
@@ -69,10 +114,9 @@ export const metadata: Metadata = {
     type: 'website',
     url: BASE_URL,
     locale: 'pt_BR',
-    siteName: 'WBT Gourmet',
+    siteName: SITE_NAME,
     title: 'WBT Gourmet | Delivery em Mossoró-RN',
-    description:
-      'Peça o cardápio completo da WBT Gourmet: filé mignon, camarão, petiscos, açaí, sanduíches e bebidas premium. Delivery rápido em Mossoró-RN.',
+    description: DESCRIPTION,
     images: [
       {
         url: '/og-image.png',
@@ -87,8 +131,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'WBT Gourmet | Delivery em Mossoró-RN',
-    description:
-      'Peça o cardápio completo da WBT Gourmet: filé mignon, camarão, petiscos, açaí e bebidas premium.',
+    description: DESCRIPTION,
     images: ['/og-image.png'],
   },
 
@@ -101,19 +144,22 @@ export const metadata: Metadata = {
   category: 'food',
 };
 
+/* =========================================================
+   ROOT LAYOUT
+   ========================================================= */
+
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html
       lang="pt-BR"
       className={`${anton.variable} ${manrope.variable} ${spaceMono.variable}`}
+      suppressHydrationWarning
     >
-      <body className="bg-[#12161B] font-[family-name:var(--font-manrope)] text-[#F5F1E6] antialiased">
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

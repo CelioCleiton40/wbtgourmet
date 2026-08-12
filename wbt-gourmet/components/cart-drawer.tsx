@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { useCartStore } from '@/store/use-cart-store';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { X, Plus, Minus, ShoppingBag, ShieldCheck, ArrowRight } from 'lucide-react';
 
 const currency = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -22,8 +25,9 @@ export function CartDrawer() {
 
   async function handleCheckout() {
     setError('');
-    if (!phone || phone.replace(/\D/g, '').length < 10) {
-      setError('Digite um número de WhatsApp válido com DDD.');
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (!cleanPhone || cleanPhone.length < 10) {
+      setError('Digite um número de WhatsApp válido com DDD (ex: 84999999999).');
       return;
     }
     setLoading(true);
@@ -33,9 +37,12 @@ export function CartDrawer() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items: items.map(({ id, name, price, quantity }) => ({
-            id, name, price, quantity,
+            id,
+            name,
+            price,
+            quantity,
           })),
-          customerPhone: phone.replace(/\D/g, ''),
+          customerPhone: cleanPhone,
         }),
       });
       const data = await res.json();
@@ -54,154 +61,66 @@ export function CartDrawer() {
   if (!isOpen) return null;
 
   return (
-    /* Overlay */
     <div
       onClick={closeDrawer}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 50,
-        background: 'rgba(0,0,0,0.65)',
-        display: 'flex',
-        alignItems: 'flex-end',
-      }}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-sm animate-fade-in"
     >
-      {/* Drawer panel */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="animate-slide-up"
-        style={{
-          width: '100%',
-          maxHeight: '88vh',
-          overflowY: 'auto',
-          borderRadius: '24px 24px 0 0',
-          background: '#1a1f26',
-          borderTop: '1px solid rgba(239,230,208,0.08)',
-        }}
+        className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl border border-sand/15 bg-court-night p-6 shadow-2xl animate-slide-up"
       >
-        {/* Drag handle */}
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 6px' }}>
-          <div
-            style={{
-              width: '40px',
-              height: '4px',
-              borderRadius: '2px',
-              background: 'rgba(239,230,208,0.18)',
-            }}
-          />
+        {/* Handle de arrastar em telas pequenas */}
+        <div className="flex justify-center mb-4 sm:hidden">
+          <div className="h-1.5 w-12 rounded-full bg-sand/20" />
         </div>
 
-        <div style={{ padding: '0 24px 40px' }}>
-          {/* Header */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '20px',
-            }}
-          >
-            <h2
-              style={{
-                fontFamily: 'var(--font-anton), sans-serif',
-                fontSize: '22px',
-                textTransform: 'uppercase',
-                color: '#F5F1E6',
-              }}
-            >
-              Seu pedido
+        {/* Cabeçalho */}
+        <div className="flex items-center justify-between pb-4 border-b border-sand/10">
+          <div className="flex items-center gap-2.5">
+            <ShoppingBag className="h-5 w-5 text-ball" />
+            <h2 className="font-display text-xl uppercase tracking-wider text-ink">
+              Seu Pedido
             </h2>
-            <button
-              id="cart-drawer-close"
-              onClick={closeDrawer}
-              aria-label="Fechar carrinho"
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
-                background: 'rgba(239,230,208,0.06)',
-                border: 'none',
-                color: '#93A19E',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'background 0.15s',
-              }}
-            >
-              <svg viewBox="0 0 24 24" fill="none" style={{ width: '18px', height: '18px' }} stroke="currentColor" strokeWidth={2}>
-                <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" />
-              </svg>
-            </button>
           </div>
+          <button
+            id="cart-drawer-close"
+            onClick={closeDrawer}
+            aria-label="Fechar carrinho"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-sand/5 text-ink-muted hover:bg-sand/15 hover:text-ink transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
 
-          {/* Lista de itens */}
+        {/* Conteúdo do Carrinho */}
+        <div className="mt-4">
           {items.length === 0 ? (
-            <p
-              style={{
-                padding: '40px 0',
-                textAlign: 'center',
-                fontSize: '14px',
-                color: '#93A19E',
-              }}
-            >
-              Seu carrinho está vazio. Adicione itens do cardápio!
-            </p>
+            <div className="py-12 text-center text-ink-muted">
+              <ShoppingBag className="mx-auto h-12 w-12 opacity-30 mb-3" />
+              <p className="text-sm">Seu carrinho está vazio.</p>
+              <p className="text-xs text-ink-muted/70 mt-1">Adicione os pratos mais saborosos da quadra!</p>
+            </div>
           ) : (
-            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px' }}>
+            <ul className="space-y-3 max-h-60 overflow-y-auto pr-1">
               {items.map((item) => (
                 <li
                   key={item.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '12px',
-                    borderRadius: '12px',
-                    background: 'rgba(239,230,208,0.04)',
-                    marginBottom: '8px',
-                  }}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-sand/10 bg-sand/5 p-3"
                 >
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p
-                      style={{
-                        fontSize: '13px',
-                        fontWeight: 600,
-                        color: '#F5F1E6',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-ink truncate">
                       {item.name}
                     </p>
-                    <p
-                      style={{
-                        marginTop: '3px',
-                        fontFamily: 'var(--font-space-mono), monospace',
-                        fontSize: '11px',
-                        color: '#93A19E',
-                      }}
-                    >
+                    <p className="mt-0.5 font-mono text-xs text-ink-muted">
                       {currency.format(item.price)} × {item.quantity} ={' '}
-                      <span style={{ color: '#D4F13A' }}>
+                      <span className="text-ball font-bold">
                         {currency.format(item.price * item.quantity)}
                       </span>
                     </p>
                   </div>
 
-                  {/* Quantidade */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '2px 4px',
-                      borderRadius: '999px',
-                      background: 'rgba(239,230,208,0.06)',
-                      flexShrink: 0,
-                    }}
-                  >
+                  {/* Controles de quantidade */}
+                  <div className="flex items-center gap-1.5 rounded-full border border-sand/15 bg-court-night/80 p-1">
                     <button
                       id={`cart-dec-${item.id}`}
                       onClick={() =>
@@ -210,54 +129,22 @@ export function CartDrawer() {
                           : updateQuantity(item.id, item.quantity - 1)
                       }
                       aria-label={`Remover um ${item.name}`}
-                      style={{
-                        width: '26px',
-                        height: '26px',
-                        borderRadius: '50%',
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#E8592C',
-                        fontSize: '16px',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
+                      className="flex h-6 w-6 items-center justify-center rounded-full text-ember hover:bg-ember/20 transition-colors"
                     >
-                      −
+                      <Minus className="h-3 w-3" />
                     </button>
-                    <span
-                      style={{
-                        minWidth: '16px',
-                        textAlign: 'center',
-                        fontFamily: 'var(--font-space-mono), monospace',
-                        fontSize: '12px',
-                        color: '#D4F13A',
-                      }}
-                    >
+
+                    <span className="min-w-[16px] text-center font-mono text-xs font-bold text-ball">
                       {item.quantity}
                     </span>
+
                     <button
                       id={`cart-inc-${item.id}`}
                       onClick={() => updateQuantity(item.id, item.quantity + 1)}
                       aria-label={`Adicionar mais ${item.name}`}
-                      style={{
-                        width: '26px',
-                        height: '26px',
-                        borderRadius: '50%',
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#D4F13A',
-                        fontSize: '16px',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
+                      className="flex h-6 w-6 items-center justify-center rounded-full text-ball hover:bg-ball/20 transition-colors"
                     >
-                      +
+                      <Plus className="h-3 w-3" />
                     </button>
                   </div>
                 </li>
@@ -265,115 +152,58 @@ export function CartDrawer() {
             </ul>
           )}
 
-          {/* Total + checkout */}
+          {/* Checkout & Total */}
           {items.length > 0 && (
-            <>
-              {/* Linha total */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '14px 0',
-                  borderTop: '1px solid rgba(239,230,208,0.07)',
-                  borderBottom: '1px solid rgba(239,230,208,0.07)',
-                }}
-              >
-                <span style={{ fontSize: '13px', color: '#93A19E' }}>Total do pedido</span>
-                <span
-                  style={{
-                    fontFamily: 'var(--font-space-mono), monospace',
-                    fontSize: '18px',
-                    fontWeight: 700,
-                    color: '#D4F13A',
-                  }}
-                >
+            <div className="mt-6 pt-4 border-t border-sand/10 space-y-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-ink-muted">Total do pedido:</span>
+                <span className="font-mono text-xl font-bold text-ball">
                   {currency.format(total)}
                 </span>
               </div>
 
-              {/* WhatsApp input */}
-              <div style={{ marginTop: '20px' }}>
+              {/* Formulário de WhatsApp */}
+              <div className="space-y-2">
                 <label
                   htmlFor="cart-phone"
-                  style={{
-                    display: 'block',
-                    fontSize: '11px',
-                    color: '#93A19E',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                  }}
+                  className="block text-[11px] font-mono uppercase tracking-wider text-ink-muted"
                 >
-                  WhatsApp para confirmação
+                  WhatsApp para Confirmação e Rastreio
                 </label>
-                <input
+                <Input
                   id="cart-phone"
                   type="tel"
-                  required
                   placeholder="(84) 99999-9999"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    borderRadius: '12px',
-                    background: 'rgba(239,230,208,0.06)',
-                    border: '1px solid rgba(239,230,208,0.1)',
-                    color: '#F5F1E6',
-                    fontSize: '14px',
-                    fontFamily: 'var(--font-manrope), sans-serif',
-                    outline: 'none',
-                  }}
                 />
                 {error && (
-                  <p
-                    style={{
-                      marginTop: '6px',
-                      fontSize: '12px',
-                      color: '#E8592C',
-                    }}
-                  >
-                    {error}
-                  </p>
+                  <p className="text-xs text-ember font-medium">{error}</p>
                 )}
-                <p
-                  style={{
-                    marginTop: '6px',
-                    fontSize: '11px',
-                    color: 'rgba(147,161,158,0.6)',
-                  }}
-                >
-                  Usamos seu WhatsApp só para confirmar o pedido.
+                <p className="flex items-center gap-1.5 text-[11px] text-ink-muted/70">
+                  <ShieldCheck className="h-3.5 w-3.5 text-ball" /> Usamos seu WhatsApp somente para enviar os detalhes do pedido (LGPD).
                 </p>
               </div>
 
-              {/* Botão pagar */}
-              <button
+              {/* Botão de Finalização */}
+              <Button
                 id="cart-checkout-btn"
                 onClick={handleCheckout}
                 disabled={loading || items.length === 0}
-                style={{
-                  marginTop: '16px',
-                  width: '100%',
-                  padding: '15px',
-                  borderRadius: '14px',
-                  background: loading ? 'rgba(212,241,58,0.6)' : '#D4F13A',
-                  color: '#12161B',
-                  fontFamily: 'var(--font-anton), sans-serif',
-                  fontSize: '15px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  border: 'none',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  opacity: loading ? 0.7 : 1,
-                  boxShadow: '0 4px 20px rgba(212,241,58,0.3)',
-                  transition: 'opacity 0.15s, transform 0.1s',
-                }}
+                variant="ball"
+                size="lg"
+                className="w-full py-4 text-sm font-bold shadow-[0_4px_20px_rgba(212,241,58,0.3)] hover:brightness-110"
               >
-                {loading ? 'Abrindo pagamento…' : `Pagar ${currency.format(total)}`}
-              </button>
-            </>
+                {loading ? (
+                  'Processando Pagamento…'
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    Finalizar Pedido ({currency.format(total)})
+                    <ArrowRight className="h-4 w-4" />
+                  </span>
+                )}
+              </Button>
+            </div>
           )}
         </div>
       </div>

@@ -1,96 +1,110 @@
+import type { WithContext, Restaurant } from 'schema-dts';
+
 import { menu } from '@/data/menu';
 import { Hero } from '@/components/hero';
-import { MenuSection } from '@/components/menu-section';
 import { MenuNav } from '@/components/menu-nav';
+import { MenuSection } from '@/components/menu-section';
 import { StickyCta } from '@/components/sticky-cta';
 import { CartDrawer } from '@/components/cart-drawer';
+import { LgpdBanner } from '@/components/lgpd-banner';
+
+const SITE_URL = 'https://wbtgourmet.com.br';
+const RESTAURANT_IMAGE = `${SITE_URL}/og-image.png`;
+
+const restaurantSchema: WithContext<Restaurant> = {
+  '@context': 'https://schema.org',
+  '@type': 'Restaurant',
+
+  name: 'WBT Gourmet',
+
+  description:
+    'Delivery de comida gourmet em Mossoró-RN. Filé mignon, camarão, petiscos, açaí, sanduíches e bebidas premium direto da WBT Arena.',
+
+  url: SITE_URL,
+
+  image: [RESTAURANT_IMAGE],
+
+  servesCuisine: ['Brasileira', 'Gourmet', 'Petiscos'],
+
+  priceRange: '$$',
+
+  address: {
+    '@type': 'PostalAddress',
+    addressLocality: 'Mossoró',
+    addressRegion: 'RN',
+    addressCountry: 'BR',
+  },
+
+  geo: {
+    '@type': 'GeoCoordinates',
+    latitude: -5.1876,
+    longitude: -37.3437,
+  },
+
+  areaServed: {
+    '@type': 'City',
+    name: 'Mossoró',
+  },
+
+  contactPoint: {
+    '@type': 'ContactPoint',
+    contactType: 'customer support',
+    availableLanguage: ['pt-BR'],
+  },
+};
+
+const restaurantJsonLd = JSON.stringify(restaurantSchema);
 
 export default function Page() {
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'FoodEstablishment',
-    name: 'WBT Gourmet',
-    description:
-      'Delivery de comida gourmet em Mossoró-RN. Filé mignon, camarão, petiscos, açaí, sanduíches e bebidas premium direto da WBT Arena.',
-    url: 'https://wbtgourmet.com.br',
-    image: 'https://wbtgourmet.com.br/og-image.png',
-    servesCuisine: ['Brasileira', 'Gourmet', 'Petiscos'],
-    priceRange: '$$',
-    hasDeliveryMethod: 'https://schema.org/DeliveryModeDirectDownload',
-    address: {
-      '@type': 'PostalAddress',
-      addressLocality: 'Mossoró',
-      addressRegion: 'RN',
-      addressCountry: 'BR',
-    },
-    geo: {
-      '@type': 'GeoCoordinates',
-      latitude: '-5.1876',
-      longitude: '-37.3437',
-    },
-    contactPoint: {
-      '@type': 'ContactPoint',
-      contactType: 'customer support',
-      availableLanguage: 'Portuguese',
-    },
-    sameAs: [],
-  };
-
   return (
-    <main style={{ position: 'relative', background: '#12161B', minHeight: '100dvh' }}>
+    <main className="min-h-dvh bg-court-night text-ink">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: restaurantJsonLd,
+        }}
       />
 
+      {/* Hero com Vídeo 3D Parallax */}
       <Hero />
 
-      {/* Nav rápido por categoria */}
+      {/* Menu de Navegação Sticky */}
       <MenuNav sections={menu} />
 
-      {/* Cardápio */}
-      <div
+      {/* Grade de Seções do Cardápio */}
+      <section
         id="cardapio"
-        style={{
-          maxWidth: '880px',
-          margin: '0 auto',
-          padding: '24px 16px 120px',
-        }}
+        className="mx-auto w-full max-w-6xl px-4 pb-32 pt-8"
+        aria-label="Cardápio WBT Gourmet"
       >
-        {menu.map((section, i) => (
-          <MenuSection key={section.id} section={section} index={i} />
+        {menu.map((section, index) => (
+          <MenuSection
+            key={section.id}
+            section={section}
+            index={index}
+          />
         ))}
-      </div>
+      </section>
 
-      {/* Rodapé */}
-      <footer
-        style={{
-          borderTop: '1px solid rgba(239,230,208,0.06)',
-          padding: '32px 16px',
-          textAlign: 'center',
-          fontSize: '12px',
-          color: '#93A19E',
-        }}
-      >
-        <p>
-          <span
-            style={{
-              fontFamily: 'var(--font-space-mono), monospace',
-              color: '#D4F13A',
-            }}
-          >
+      {/* Footer Profissional */}
+      <footer className="border-t border-sand/10 bg-court-night/80 px-4 py-10 text-center text-xs text-ink-muted">
+        <div className="mx-auto max-w-2xl space-y-2">
+          <p className="font-mono text-sm text-ball font-bold tracking-wider">
             WBT Gourmet
-          </span>{' '}
-          · WBT Arena · Mossoró-RN
-        </p>
-        <p style={{ marginTop: '4px' }}>
-          Delivery disponível em Mossoró e região · Confirmação via WhatsApp
-        </p>
+          </p>
+          <p>
+            WBT Arena · Mossoró-RN · Delivery em Mossoró e região
+          </p>
+          <p className="text-[11px] text-ink-muted/70 pt-2">
+            Confirmação rápida via WhatsApp · Todos os direitos reservados.
+          </p>
+        </div>
       </footer>
 
-      {/* Carrinho */}
+      {/* Componentes Flutuantes de Ação e LGPD */}
       <StickyCta />
       <CartDrawer />
+      <LgpdBanner />
     </main>
   );
 }
