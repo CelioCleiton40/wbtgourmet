@@ -1,30 +1,31 @@
 import type { Metadata, Viewport } from 'next';
-import { Anton, Manrope, Space_Mono } from 'next/font/google';
+import { Playfair_Display, Manrope, DM_Mono } from 'next/font/google';
 import './globals.css';
 
 /* =========================================================
-   FONTS
+   FONTS — Identidade Gourmet
+   Nomes únicos com prefixo --wbt- para evitar conflito
+   com os tokens --font-* do Tailwind v4 @theme
    ========================================================= */
 
-const anton = Anton({
+const playfair = Playfair_Display({
   subsets: ['latin'],
-  weight: '400',
-  variable: '--font-anton',
+  variable: '--wbt-playfair',
   display: 'swap',
   preload: true,
 });
 
 const manrope = Manrope({
   subsets: ['latin'],
-  variable: '--font-manrope',
+  variable: '--wbt-manrope',
   display: 'swap',
   preload: true,
 });
 
-const spaceMono = Space_Mono({
+const dmMono = DM_Mono({
   subsets: ['latin'],
-  weight: ['400', '700'],
-  variable: '--font-space-mono',
+  weight: ['400', '500'],
+  variable: '--wbt-dm-mono',
   display: 'swap',
   preload: true,
 });
@@ -47,7 +48,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#12161B',
+  themeColor: '#4BA646',
   colorScheme: 'dark',
 };
 
@@ -156,7 +157,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${anton.variable} ${manrope.variable} ${spaceMono.variable}`}
+      className={`${playfair.variable} ${manrope.variable} ${dmMono.variable}`}
       suppressHydrationWarning
     >
       <body>{children}</body>

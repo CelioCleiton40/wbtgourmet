@@ -57,24 +57,65 @@ const restaurantJsonLd = JSON.stringify(restaurantSchema);
 
 export default function Page() {
   return (
-    <main className="min-h-dvh bg-court-night text-ink">
+    <main className="min-h-dvh bg-g-dark text-g-cream">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: restaurantJsonLd,
-        }}
+        dangerouslySetInnerHTML={{ __html: restaurantJsonLd }}
       />
 
-      {/* Hero com Vídeo 3D Parallax */}
+      {/* Hero Gourmet */}
       <Hero />
 
-      {/* Menu de Navegação Sticky */}
+      {/* Navegação Sticky de Categorias */}
       <MenuNav sections={menu} />
 
-      {/* Grade de Seções do Cardápio */}
+      {/* Seção de Destaque — incentivo à descoberta */}
+      <section
+        aria-label="Por que escolher a WBT Gourmet"
+        className="mx-auto w-full max-w-6xl px-4 pt-10 pb-4"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[
+            {
+              icon: '🥩',
+              title: 'Ingredientes selecionados',
+              desc: 'Filé mignon e camarão de qualidade superior, escolhidos com cuidado.',
+            },
+            {
+              icon: '⚡',
+              title: 'Entrega rápida',
+              desc: 'Pedido confirmado direto pelo WhatsApp, sem burocracia.',
+            },
+            {
+              icon: '🌟',
+              title: 'Feito na hora',
+              desc: 'Tudo preparado no momento do pedido para máxima frescura.',
+            },
+          ].map((item) => (
+            <div
+              key={item.title}
+              className="flex items-start gap-4 rounded-2xl border border-g-line bg-g-surface p-5"
+            >
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-g-green/10">
+                <span className="text-2xl" aria-hidden="true">{item.icon}</span>
+              </div>
+              <div>
+                <h3 className="font-body text-sm font-bold text-g-cream">
+                  {item.title}
+                </h3>
+                <p className="mt-0.5 text-xs text-g-muted leading-relaxed">
+                  {item.desc}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Cardápio Completo */}
       <section
         id="cardapio"
-        className="mx-auto w-full max-w-6xl px-4 pb-32 pt-8"
+        className="mx-auto w-full max-w-6xl px-4 pb-36 pt-8"
         aria-label="Cardápio WBT Gourmet"
       >
         {menu.map((section, index) => (
@@ -86,22 +127,32 @@ export default function Page() {
         ))}
       </section>
 
-      {/* Footer Profissional */}
-      <footer className="border-t border-sand/10 bg-court-night/80 px-4 py-10 text-center text-xs text-ink-muted">
-        <div className="mx-auto max-w-2xl space-y-2">
-          <p className="font-mono text-sm text-ball font-bold tracking-wider">
+      {/* Footer Gourmet */}
+      <footer className="border-t border-g-line bg-g-surface/80 px-4 py-12 text-center">
+        <div className="mx-auto max-w-2xl space-y-3">
+          {/* Logo textual */}
+          <p className="font-display text-2xl text-g-cream tracking-tight">
             WBT Gourmet
           </p>
-          <p>
-            WBT Arena · Mossoró-RN · Delivery em Mossoró e região
+
+          {/* Linha decorativa */}
+          <div className="flex items-center justify-center gap-3">
+            <div className="h-px w-12 bg-g-line" />
+            <span className="text-g-green text-sm" aria-hidden="true">✦</span>
+            <div className="h-px w-12 bg-g-line" />
+          </div>
+
+          <p className="text-sm text-g-muted">
+            WBT Arena · Mossoró-RN · Delivery gourmet em Mossoró e região
           </p>
-          <p className="text-[11px] text-ink-muted/70 pt-2">
+
+          <p className="text-[11px] text-g-faint pt-2">
             Confirmação rápida via WhatsApp · Todos os direitos reservados.
           </p>
         </div>
       </footer>
 
-      {/* Componentes Flutuantes de Ação e LGPD */}
+      {/* Elementos Flutuantes */}
       <StickyCta />
       <CartDrawer />
       <LgpdBanner />

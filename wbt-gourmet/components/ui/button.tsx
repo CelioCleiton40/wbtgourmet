@@ -3,33 +3,46 @@ import { cn } from '@/lib/cn';
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'default' | 'ember' | 'outline' | 'ghost' | 'ball';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'outline' | 'danger' | 'rose';
   size?: 'default' | 'sm' | 'lg' | 'icon';
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'default', size = 'default', ...props }, ref) => {
+  ({ className, variant = 'primary', size = 'default', ...props }, ref) => {
     const baseStyles =
-      'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-display uppercase tracking-wider text-xs transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ball disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] select-none';
+      'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-body font-semibold tracking-wide transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-g-green focus-visible:ring-offset-2 focus-visible:ring-offset-g-dark disabled:pointer-events-none disabled:opacity-45 active:scale-[0.97] select-none';
 
     const variants = {
-      default:
-        'bg-ball text-court-night hover:bg-ball/90 shadow-[0_0_20px_rgba(212,241,58,0.25)]',
-      ember:
-        'bg-ember text-ink hover:bg-ember/90 shadow-[0_4px_24px_rgba(232,89,44,0.4)]',
-      ball:
-        'bg-ball text-court-night hover:brightness-110 font-bold',
-      outline:
-        'border border-sand/20 text-ink-muted hover:border-ball hover:bg-ball hover:text-court-night',
+      /** CTA principal — verde gourmet vibrante */
+      primary:
+        'bg-g-green text-g-dark hover:bg-g-green-lt shadow-[0_4px_24px_rgba(75,166,70,0.35)] hover:shadow-[0_6px_32px_rgba(75,166,70,0.5)]',
+
+      /** CTA secundário — borda cream sutil */
+      secondary:
+        'border border-g-cream/20 text-g-cream bg-transparent hover:bg-g-cream/8 hover:border-g-cream/40',
+
+      /** Ação neutra — mínima visibilidade */
       ghost:
-        'text-ink-muted hover:bg-sand/10 hover:text-ink',
+        'text-g-muted hover:bg-g-surface-2 hover:text-g-cream',
+
+      /** Outline com cor do label */
+      outline:
+        'border border-g-green/30 text-g-green bg-transparent hover:bg-g-green hover:text-g-dark hover:border-g-green',
+
+      /** SOMENTE erros / ações destrutivas */
+      danger:
+        'border border-g-error/30 text-g-error bg-transparent hover:bg-g-error hover:text-white hover:border-g-error',
+
+      /** Rose — badges de ação especial */
+      rose:
+        'bg-g-rose text-white hover:bg-g-rose-lt shadow-[0_4px_20px_rgba(201,88,122,0.35)]',
     };
 
     const sizes = {
-      default: 'h-11 px-6 py-2.5',
-      sm: 'h-8 px-4 text-[11px]',
-      lg: 'h-13 px-8 py-3.5 text-sm tracking-widest',
-      icon: 'h-9 w-9 p-0 rounded-full',
+      default: 'h-11 px-6 py-2.5 text-sm',
+      sm:      'h-8 px-4 text-xs',
+      lg:      'h-14 px-8 py-3.5 text-base',
+      icon:    'h-10 w-10 p-0 rounded-full',
     };
 
     return (

@@ -5,27 +5,25 @@ export function Hero() {
   return (
     <section
       aria-labelledby="hero-title"
-      className="relative flex min-h-[85vh] flex-col items-center justify-center overflow-hidden bg-court-night"
+      className="relative flex min-h-[90vh] flex-col items-center justify-center overflow-hidden bg-g-dark"
     >
-      {/* Vídeo Fullscreen em 3D Parallax */}
+      {/* Vídeo Fullscreen */}
       <HeroVideo />
 
-      {/* Linhas Perspectivas da Quadra no SVG */}
-      <svg
+      {/* Overlay gourmet — gradiente radial verde + escurecimento */}
+      <div
         aria-hidden="true"
-        viewBox="0 0 800 500"
-        preserveAspectRatio="xMidYMid slice"
-        className="pointer-events-none absolute inset-0 h-full w-full opacity-10"
-      >
-        <line x1="400" y1="0" x2="0" y2="500" stroke="#EFE6D0" strokeWidth="1.2" strokeDasharray="10 14" />
-        <line x1="400" y1="0" x2="800" y2="500" stroke="#EFE6D0" strokeWidth="1.2" strokeDasharray="10 14" />
-        <line x1="400" y1="0" x2="150" y2="500" stroke="#EFE6D0" strokeWidth="0.7" strokeDasharray="6 10" opacity="0.6" />
-        <line x1="400" y1="0" x2="650" y2="500" stroke="#EFE6D0" strokeWidth="0.7" strokeDasharray="6 10" opacity="0.6" />
-        <line x1="0" y1="240" x2="800" y2="240" stroke="#EFE6D0" strokeWidth="1" strokeDasharray="10 14" />
-        <line x1="0" y1="380" x2="800" y2="380" stroke="#EFE6D0" strokeWidth="0.6" strokeDasharray="6 10" opacity="0.5" />
-      </svg>
+        className="hero-overlay pointer-events-none absolute inset-0 z-[1]"
+      />
 
-      {/* Conteúdo Principal do Hero */}
+      {/* Brilho difuso superior — atmosfera premium */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-32 left-1/2 h-96 w-[600px] -translate-x-1/2 rounded-full opacity-20 blur-3xl"
+        style={{ background: 'radial-gradient(circle, #4BA646 0%, transparent 70%)' }}
+      />
+
+      {/* Conteúdo Principal */}
       <HeroContent />
     </section>
   );
