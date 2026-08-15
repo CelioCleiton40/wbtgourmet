@@ -16,7 +16,12 @@ export class Phone {
       throw new InvalidPhoneError('Telefone não fornecido.');
     }
 
-    const digitsOnly = input.replace(/\D/g, '');
+    let digitsOnly = input.replace(/\D/g, '');
+
+    // Se o usuário digitou com zero inicial de DDD (ex: 084988909408), remove o zero
+    if (digitsOnly.startsWith('0') && (digitsOnly.length === 11 || digitsOnly.length === 12)) {
+      digitsOnly = digitsOnly.substring(1);
+    }
 
     if (digitsOnly.length === 10 || digitsOnly.length === 11) {
       // 10 dígitos (DDD + 8 números) ou 11 dígitos (DDD + 9 números): adiciona o DDI 55

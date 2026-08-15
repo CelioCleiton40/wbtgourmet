@@ -1,11 +1,7 @@
 import { NextResponse } from 'next/server';
 import { GetOrderStatusUseCase } from '@/application/orders/get-order-status/get-order-status.use-case';
 import { getOrderRepository } from '@/infrastructure/repositories/order-repository-factory';
-import { InMemoryCheckoutSessionRepository } from '@/infrastructure/repositories/in-memory-checkout-session-repository';
-
-// Compartilhar a mesma instância do repositório de checkout sessions
-// Em produção, substituir por SupabaseCheckoutSessionRepository
-const checkoutSessionRepository = new InMemoryCheckoutSessionRepository();
+import { getCheckoutSessionRepository } from '@/infrastructure/repositories/checkout-session-repository-factory';
 
 export async function GET(request: Request) {
   try {
@@ -20,6 +16,7 @@ export async function GET(request: Request) {
     }
 
     const orderRepo = getOrderRepository();
+    const checkoutSessionRepository = getCheckoutSessionRepository();
     const useCase = new GetOrderStatusUseCase(orderRepo, checkoutSessionRepository);
     const result = await useCase.execute({ stripeSessionId: sessionId });
 

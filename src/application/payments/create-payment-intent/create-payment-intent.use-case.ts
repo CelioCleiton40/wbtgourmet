@@ -19,8 +19,9 @@ export class CreatePaymentIntentUseCase {
   ) {}
 
   public async execute(input: CreatePaymentIntentInput): Promise<CreatePaymentIntentOutput> {
-    const order = await this.orderRepository.findByOrderCode(input.orderId);
-    const targetOrder = order || (await this.orderRepository.findByIdempotencyKey(input.orderId));
+    const targetOrder = (await this.orderRepository.findById(input.orderId))
+      || (await this.orderRepository.findByOrderCode(input.orderId))
+      || (await this.orderRepository.findByIdempotencyKey(input.orderId));
 
     if (!targetOrder) {
       throw new ProductNotFoundError(`Pedido "${input.orderId}" não encontrado para pagamento.`);

@@ -51,6 +51,7 @@ export function CartDrawer() {
   const [feeCents, setFeeCents]       = useState<number | null>(null);
   const [quoteExpiry, setQuoteExpiry] = useState<Date | null>(null);
   const [quotingFee, setQuotingFee]   = useState(false);
+  const [loadingCep, setLoadingCep]   = useState(false);
 
   function resetDrawer() {
     setStep('cart');
@@ -61,52 +62,108 @@ export function CartDrawer() {
     setQuoteId('');
     setFeeCents(null);
     setQuoteExpiry(null);
+    setLoadingCep(false);
   }
 
-  // ── Step 1: Criar pedido ───────────────────────────────────────────────────
-  async function handleCreateOrder() {
+  // ── Busca de CEP automática ViaCEP ───────────────────────────────────────
+  async function fetchAddressByCep(cleanCep: string) {
+    if (cleanCep.length !== 8) return;
+
+    setLoadingCep(true);
     setError('');
-    const cleanPhone = phone.replace(/\D/g, '');
-    if (!cleanPhone || cleanPhone.length < 10) {
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.erro) {
+          setError('CEP não encontrado. Verifique os números ou preencha manualmente.');
+          return;
+        }
+        setAddress((prev) => ({
+          ...prev,
+          postalCode: cleanCep.replace(/^(\d{5})(\d{3})$/, '$1-$2'),
+          street: data.logradouro || prev.street,
+          district: data.bairro || prev.district,
+          city: data.localidade || prev.city,
+          state: (data.uf || prev.state).toUpperCase(),
+        }));
+        setTimeout(() => {
+          const numberEl = document.getElementById('addr-number');
+          if (numberEl) numberEl.focus();
+        }, 100);
+      }
+    } catch {
+      // Permite preenchimento manual em caso de falha de conexão
+    } finally {
+      setLoadingCep(false);
+    }
+  }
+
+  function handleCepChange(val: string) {
+    const clean = val.replace(/\D/g, '');
+    let formatted = clean;
+    if (clean.length > 5) {
+      formatted = `${clean.slice(0, 5)}-${clean.slice(5, 8)}`;
+    }
+    setAddress((prev) => ({ ...prev, postalCode: formatted }));
+
+    if (clean.length === 8) {
+      fetchAddressByCep(clean);
+    }
+  }
+
+  function getNormalizedPhone(rawPhone: string): string {
+    let clean = rawPhone.replace(/\D/g, '');
+    if (clean.startsWith('0') && (clean.length === 11 || clean.length === 12)) {
+      clean = clean.substring(1);
+    }
+    if (!clean.startsWith('55') && (clean.length === 10 || clean.length === 11)) {
+      clean = `55${clean}`;
+    }
+    return clean;
+  }
+
+  function handlePhoneChange(val: string) {
+    let clean = val.replace(/\D/g, '');
+    if (clean.startsWith('55') && clean.length > 11) {
+      clean = clean.substring(2);
+    } else if (clean.startsWith('0') && clean.length > 10) {
+      clean = clean.substring(1);
+    }
+
+    let formatted = clean;
+    if (clean.length > 0) {
+      if (clean.length <= 2) {
+        formatted = `(${clean}`;
+      } else if (clean.length <= 6) {
+        formatted = `(${clean.slice(0, 2)}) ${clean.slice(2)}`;
+      } else if (clean.length <= 10) {
+        formatted = `(${clean.slice(0, 2)}) ${clean.slice(2, 6)}-${clean.slice(6)}`;
+      } else {
+        formatted = `(${clean.slice(0, 2)}) ${clean.slice(2, 7)}-${clean.slice(7, 11)}`;
+      }
+    }
+
+    setPhone(formatted);
+  }
+
+  // ── Step 1: Validar telefone e avançar para endereço ─────────────────────
+  function handleContinueToAddress() {
+    setError('');
+    const cleanPhone = getNormalizedPhone(phone);
+    if (!cleanPhone || cleanPhone.length < 12 || cleanPhone.length > 13 || !cleanPhone.startsWith('55')) {
       setError('Digite um WhatsApp válido com DDD (ex: 84 9 9999-9999).');
       return;
     }
-
-    setLoading(true);
-    try {
-      const idempotencyKey = crypto.randomUUID();
-
-      const res = await fetch('/api/orders/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: items.map(({ id, quantity }) => ({ id, quantity })),
-          customerPhone: cleanPhone,
-          idempotencyKey,
-          // quoteId não enviado aqui — será adicionado depois de calcular o frete
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Erro ao criar pedido. Tente novamente.');
-        return;
-      }
-
-      setOrderId(data.orderId || data.orderCode);
-      setStep('address');
-    } catch {
-      setError('Erro de conexão. Verifique sua internet.');
-    } finally {
-      setLoading(false);
-    }
+    setStep('address');
   }
 
   // ── Step 2a: Calcular frete ────────────────────────────────────────────────
   async function handleQuoteFee() {
     setError('');
-    if (!address.street || !address.number || !address.district || !address.city || !address.postalCode) {
-      setError('Preencha rua, número, bairro, cidade e CEP.');
+    const cleanCep = address.postalCode.replace(/\D/g, '');
+    if (!address.street || !address.number || !address.district || !address.city || !address.state || cleanCep.length !== 8) {
+      setError('Preencha rua, número, bairro, cidade, estado e CEP válido (8 dígitos).');
       return;
     }
 
@@ -115,7 +172,12 @@ export function CartDrawer() {
       const res = await fetch('/api/deliveries/quote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address }),
+        body: JSON.stringify({
+          dropoffAddress: {
+            ...address,
+            postalCode: cleanCep,
+          },
+        }),
       });
 
       const data = await res.json();
@@ -134,7 +196,7 @@ export function CartDrawer() {
     }
   }
 
-  // ── Step 2b: Ir para Stripe ────────────────────────────────────────────────
+  // ── Step 2b: Criar pedido + Iniciar Stripe Checkout ────────────────────────
   async function handleGoToStripe() {
     if (!quoteId || feeCents === null) {
       setError('Calcule o frete antes de continuar.');
@@ -149,20 +211,51 @@ export function CartDrawer() {
       return;
     }
 
+    const cleanPhone = getNormalizedPhone(phone);
+    if (!cleanPhone || cleanPhone.length < 12 || cleanPhone.length > 13 || !cleanPhone.startsWith('55')) {
+      setError('Telefone para WhatsApp inválido. Informe DDD + número.');
+      return;
+    }
+
     setLoading(true);
     setError('');
     try {
-      const idempotencyKey = crypto.randomUUID();
+      // 1. Criar o pedido vinculando a cotação de frete oficial
+      const orderIdempotencyKey = crypto.randomUUID();
+      const orderRes = await fetch('/api/orders/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: items.map(({ id, quantity }) => ({ id, quantity })),
+          customerPhone: cleanPhone,
+          idempotencyKey: orderIdempotencyKey,
+          quoteId: quoteId,
+        }),
+      });
+
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) {
+        setError(orderData.error || 'Erro ao criar pedido. Tente novamente.');
+        return;
+      }
+
+      const createdOrderId = orderData.orderId || orderData.orderCode;
+      setOrderId(createdOrderId);
+
+      // 2. Criar a Checkout Session do Stripe com o pedido já contendo o frete
+      const checkoutIdempotencyKey = crypto.randomUUID();
       const res = await fetch('/api/payments/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, idempotencyKey }),
+        body: JSON.stringify({
+          orderId: createdOrderId,
+          idempotencyKey: checkoutIdempotencyKey,
+        }),
       });
 
       const data = await res.json();
       if (!res.ok) {
         if (res.status === 410) {
-          // Cotação expirou no servidor
           setError('O frete expirou. Recalcule antes de continuar.');
           setQuoteId('');
           setFeeCents(null);
@@ -172,8 +265,6 @@ export function CartDrawer() {
         return;
       }
 
-      // NÃO limpar o carrinho aqui — só limpar após confirmação do pagamento
-      // O redirecionamento acontece; o carrinho é preservado caso o pagamento falhe
       closeDrawer();
       window.location.href = data.url;
     } catch {
@@ -200,6 +291,9 @@ export function CartDrawer() {
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-g-dark/80 backdrop-blur-sm"
         >
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cart-title"
             initial={{ y: '100%', opacity: 0.5 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0 }}
@@ -234,7 +328,7 @@ export function CartDrawer() {
                       : <MapPin className="h-4.5 w-4.5 text-g-green" />}
                   </div>
                   <div>
-                    <h2 className="font-display text-xl text-g-cream">
+                    <h2 id="cart-title" className="font-display text-xl text-g-cream">
                       {step === 'cart' ? 'Seu Pedido' : 'Endereço de Entrega'}
                     </h2>
                     <p className="text-[11px] text-g-muted">
@@ -337,7 +431,7 @@ export function CartDrawer() {
                           inputMode="numeric"
                           placeholder="(84) 9 9999-9999"
                           value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
+                          onChange={(e) => handlePhoneChange(e.target.value)}
                         />
                         {error && (
                           <p role="alert" className="text-xs text-g-error font-medium flex items-center gap-1">
@@ -352,23 +446,16 @@ export function CartDrawer() {
 
                       <Button
                         id="cart-continue-btn"
-                        onClick={handleCreateOrder}
-                        disabled={loading || items.length === 0}
+                        onClick={handleContinueToAddress}
+                        disabled={items.length === 0}
                         variant="primary"
                         size="lg"
                         className="w-full"
                       >
-                        {loading ? (
-                          <span className="flex items-center gap-2">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Criando seu pedido…
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-2">
-                            Continuar para entrega
-                            <ArrowRight className="h-4 w-4" />
-                          </span>
-                        )}
+                        <span className="flex items-center gap-2">
+                          Continuar para entrega
+                          <ArrowRight className="h-4 w-4" />
+                        </span>
                       </Button>
                     </div>
                   )}
@@ -398,12 +485,20 @@ export function CartDrawer() {
                     <p className="text-xs font-semibold uppercase tracking-wider text-g-muted">Endereço de entrega</p>
 
                     <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        id="addr-cep"
-                        placeholder="CEP (ex: 59607-000)"
-                        value={address.postalCode}
-                        onChange={(e) => setAddress({ ...address, postalCode: e.target.value })}
-                      />
+                      <div className="relative">
+                        <Input
+                          id="addr-cep"
+                          placeholder="CEP (ex: 59607-000)"
+                          maxLength={9}
+                          value={address.postalCode}
+                          onChange={(e) => handleCepChange(e.target.value)}
+                        />
+                        {loadingCep && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs text-g-green font-medium">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          </div>
+                        )}
+                      </div>
                       <Input
                         id="addr-state"
                         placeholder="Estado (ex: RN)"

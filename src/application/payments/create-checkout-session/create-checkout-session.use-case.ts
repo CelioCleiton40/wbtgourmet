@@ -76,8 +76,9 @@ export class CreateCheckoutSessionUseCase {
   public async execute(
     input: CreateCheckoutSessionInput
   ): Promise<CreateCheckoutSessionOutput> {
-    // 1. Carregar o pedido
-    const order = await this.orderRepository.findByOrderCode(input.orderId)
+    // 1. Carregar o pedido (por UUID/ID interno, orderCode público ou idempotencyKey)
+    const order = await this.orderRepository.findById(input.orderId)
+      ?? await this.orderRepository.findByOrderCode(input.orderId)
       ?? await this.orderRepository.findByIdempotencyKey(input.orderId);
 
     // Tenta por UUID interno também

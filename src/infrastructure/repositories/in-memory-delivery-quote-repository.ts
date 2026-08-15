@@ -4,11 +4,9 @@ import { Money } from '@/domain/orders/value-objects/money';
 
 export class InMemoryDeliveryQuoteRepository implements DeliveryQuoteRepository {
   private quotes: Map<string, DeliveryQuote> = new Map();
-  private idCounter = 1;
-
   public async save(quote: DeliveryQuote): Promise<void> {
     // Atribuir UUID interno se não existir (simula geração pelo banco)
-    const id = (quote as DeliveryQuote & { id?: string }).id || `quote-${this.idCounter++}-${Date.now()}`;
+    const id = (quote as DeliveryQuote & { id?: string }).id || crypto.randomUUID();
 
     // Recria com id atribuído (workaround para id readonly)
     const stored = DeliveryQuote.create({

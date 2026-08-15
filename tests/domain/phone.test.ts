@@ -13,6 +13,11 @@ describe('Phone Value Object', () => {
     expect(phone.value).toBe('5584998890940');
   });
 
+  it('deve remover zero inicial de DDD (ex: 084988909408)', () => {
+    const phone = Phone.create('084988909408');
+    expect(phone.value).toBe('5584988909408');
+  });
+
   it('deve manter DDI 55 se já fornecido', () => {
     const phone = Phone.create('5584988909408');
     expect(phone.value).toBe('5584988909408');

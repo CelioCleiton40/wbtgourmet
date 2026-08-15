@@ -35,14 +35,15 @@ const createOrderSchema = z
       .max(50, 'O pedido não pode conter mais de 50 produtos diferentes.'),
     customerPhone: z.string().min(8, 'Telefone muito curto.').max(30, 'Telefone muito longo.'),
     idempotencyKey: z.string().uuid('A chave de idempotência deve ser um UUID válido (v4).'),
-    /** UUID interno da cotação retornado por /api/deliveries/quote — nunca um preço. */
-    quoteId: z.string().uuid('quoteId deve ser UUID v4.').optional(),
+    /** ID da cotação retornado por /api/deliveries/quote — nunca um preço. */
+    quoteId: z.string().min(1, 'quoteId inválido.').max(100, 'quoteId muito longo.').optional(),
   })
   .strict();
 
+import { getDeliveryQuoteRepository } from '@/infrastructure/repositories/delivery-quote-repository-factory';
+
 const rateLimiter = new RateLimiter(10, 60);
 const menuProductRepository = new MenuProductRepository();
-const deliveryQuoteRepository = new InMemoryDeliveryQuoteRepository();
 const botConversaFormatter = new BotConversaMessageFormatter();
 
 export class OrderController {
@@ -96,11 +97,12 @@ export class OrderController {
       const rateLimitKey = `${clientIp}:${validatedData.customerPhone.replace(/\D/g, '')}`;
       rateLimiter.check(rateLimitKey);
 
-      // 6. Seleção do repositório via fábrica compartilhada
+      // 6. Seleção dos repositórios via fábrica compartilhada
       const orderRepo = getOrderRepository();
+      const deliveryQuoteRepo = getDeliveryQuoteRepository();
 
       // 7. Invocação do UseCase (com repositório de cotações para suporte a frete)
-      const useCase = new CreateOrderUseCase(orderRepo, menuProductRepository, deliveryQuoteRepository);
+      const useCase = new CreateOrderUseCase(orderRepo, menuProductRepository, deliveryQuoteRepo);
       const result = await useCase.execute(validatedData);
 
       // 8. Reconstruir a entidade/dados para o Formatter do BotConversa

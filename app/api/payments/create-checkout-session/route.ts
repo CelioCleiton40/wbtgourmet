@@ -10,10 +10,13 @@ import {
   OrderNotInPendingPaymentError,
 } from '@/application/payments/create-checkout-session/create-checkout-session.use-case';
 import { getOrderRepository } from '@/infrastructure/repositories/order-repository-factory';
-import { InMemoryDeliveryQuoteRepository } from '@/infrastructure/repositories/in-memory-delivery-quote-repository';
-import { InMemoryCheckoutSessionRepository } from '@/infrastructure/repositories/in-memory-checkout-session-repository';
+import { getDeliveryQuoteRepository } from '@/infrastructure/repositories/delivery-quote-repository-factory';
+import { getCheckoutSessionRepository } from '@/infrastructure/repositories/checkout-session-repository-factory';
 import { StripePaymentGateway } from '@/infrastructure/stripe/stripe-payment-gateway';
 import { Logger } from '@/shared/utils/logger';
+
+import { RateLimiter } from '@/shared/rate-limit/rate-limiter';
+import { RateLimitError } from '@/shared/errors/domain-errors';
 
 // Schema estrito — não aceita successUrl, cancelUrl, total, quoteId, price do cliente
 const checkoutSessionSchema = z
@@ -24,15 +27,16 @@ const checkoutSessionSchema = z
   .strict();
 
 const stripePaymentGateway = new StripePaymentGateway();
-// Repositórios em memória (substituir por Supabase em produção via fábrica)
-const deliveryQuoteRepository = new InMemoryDeliveryQuoteRepository();
-const checkoutSessionRepository = new InMemoryCheckoutSessionRepository();
+const checkoutRateLimiter = new RateLimiter(10, 60);
 
 export async function POST(request: Request) {
   const startTime = Date.now();
   const requestId = crypto.randomUUID();
 
   try {
+    const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+    checkoutRateLimiter.check(`checkout:${clientIp}`);
+
     const contentType = request.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
       return NextResponse.json({ error: 'Content-Type deve ser application/json.' }, { status: 400 });
@@ -47,6 +51,9 @@ export async function POST(request: Request) {
     const { orderId, idempotencyKey } = checkoutSessionSchema.parse(rawJson);
 
     const orderRepo = getOrderRepository();
+    const deliveryQuoteRepository = getDeliveryQuoteRepository();
+    const checkoutSessionRepository = getCheckoutSessionRepository();
+
     const useCase = new CreateCheckoutSessionUseCase(
       orderRepo,
       deliveryQuoteRepository,
@@ -72,6 +79,11 @@ export async function POST(request: Request) {
     });
   } catch (error: unknown) {
     const durationMs = Date.now() - startTime;
+
+    if (error instanceof RateLimitError) {
+      Logger.error('Rate Limit excedido na criação de Checkout Session', error, { requestId, durationMs });
+      return NextResponse.json({ error: error.message }, { status: 429 });
+    }
 
     if (error instanceof OrderNotFoundForCheckoutError) {
       return NextResponse.json({ error: error.message }, { status: 404 });
