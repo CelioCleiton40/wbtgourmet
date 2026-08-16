@@ -40,3 +40,9 @@ export class RateLimitError extends DomainError {
     super(message);
   }
 }
+
+export class DeliveryUndeliverableError extends DomainError {
+  constructor(message = 'Endereço fora da nossa área de entrega (raio máximo de entrega em Mossoró).') {
+    super(message);
+  }
+}

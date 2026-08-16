@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { QuoteDeliveryUseCase } from '@/application/deliveries/quote-delivery/quote-delivery.use-case';
 import { UberDirectGateway } from '@/infrastructure/uber-direct/uber-direct-gateway';
+import { getDeliveryQuoteRepository } from '@/infrastructure/repositories/delivery-quote-repository-factory';
 import { Logger } from '@/shared/utils/logger';
-
 import { RateLimiter } from '@/shared/rate-limit/rate-limiter';
-import { RateLimitError } from '@/shared/errors/domain-errors';
+import { DeliveryUndeliverableError, RateLimitError } from '@/shared/errors/domain-errors';
 
 const addressSchema = z.object({
   street: z.string().min(1, 'Rua é obrigatória.'),
@@ -27,8 +27,6 @@ const quoteSchema = z
   .refine((data) => Boolean(data.dropoffAddress || data.address), {
     message: 'Endereço de entrega (dropoffAddress ou address) é obrigatório.',
   });
-
-import { getDeliveryQuoteRepository } from '@/infrastructure/repositories/delivery-quote-repository-factory';
 
 const uberDirectGateway = new UberDirectGateway();
 const quoteRateLimiter = new RateLimiter(15, 60);
@@ -75,6 +73,11 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     const durationMs = Date.now() - startTime;
     const errMessage = error instanceof Error ? error.message : 'Erro ao consultar valor da entrega Uber Direct.';
+
+    if (error instanceof DeliveryUndeliverableError) {
+      Logger.warn('Cotação recusada: endereço fora da área de entrega', { requestId, durationMs });
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
 
     if (error instanceof RateLimitError) {
       Logger.error('Rate Limit excedido na cotação de entrega', error, { requestId, durationMs });

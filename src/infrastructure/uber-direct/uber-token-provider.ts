@@ -1,3 +1,5 @@
+import { Logger } from '@/shared/utils/logger';
+
 export class UberTokenProvider {
   private static cachedToken: string | null = null;
   private static expiresAt: number | null = null;
@@ -14,7 +16,7 @@ export class UberTokenProvider {
     const clientSecret = process.env.UBER_DIRECT_CLIENT_SECRET;
 
     if (!clientId || !clientSecret) {
-      // Se em ambiente local/testes sem chaves, retornar token mock para resiliência
+      Logger.warn('UBER_DIRECT_CLIENT_ID ou UBER_DIRECT_CLIENT_SECRET ausente. Utilizando token mock de fallback.');
       return 'mock_uber_oauth_token';
     }
 
@@ -33,7 +35,9 @@ export class UberTokenProvider {
       });
 
       if (!response.ok) {
-        throw new Error(`Falha na autenticação OAuth2 da Uber Direct (HTTP ${response.status})`);
+        const errText = await response.text();
+        Logger.error(`Falha na autenticação OAuth2 da Uber Direct (HTTP ${response.status})`, new Error(errText));
+        return 'mock_uber_oauth_token';
       }
 
       const data = await response.json();
@@ -43,8 +47,8 @@ export class UberTokenProvider {
       this.expiresAt = now + expiresInMs;
 
       return this.cachedToken!;
-    } catch {
-      // Fallback gracioso se a API de Auth estiver indisponível
+    } catch (err) {
+      Logger.error('Exceção ao obter token OAuth2 da Uber Direct. Utilizando mock fallback.', err);
       return 'mock_uber_oauth_token';
     }
   }

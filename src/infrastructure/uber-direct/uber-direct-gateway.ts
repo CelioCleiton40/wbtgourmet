@@ -1,5 +1,7 @@
 import crypto from 'crypto';
+import { Logger } from '@/shared/utils/logger';
 import { Money } from '@/domain/orders/value-objects/money';
+import { DeliveryUndeliverableError } from '@/shared/errors/domain-errors';
 import {
   CreateDeliveryParams,
   CreateDeliveryResult,
@@ -22,6 +24,7 @@ export class UberDirectGateway implements DeliveryGateway {
   public async getQuote(params: DeliveryQuoteParams): Promise<DeliveryQuoteResult> {
     const token = await UberTokenProvider.getToken();
     if (token === 'mock_uber_oauth_token') {
+      Logger.warn('Utilizando cotação mock de fallback (R$ 12,00) pois o token da Uber Direct é inválido ou ausente.');
       return {
         quoteId: `dqt_mock_${Date.now()}`,
         fee: Money.fromCents(1200), // R$ 12,00 em testes
@@ -30,6 +33,22 @@ export class UberDirectGateway implements DeliveryGateway {
     }
 
     try {
+      const pickupAddressStr = JSON.stringify({
+        street_address: [`${params.pickupAddress.street}, ${params.pickupAddress.number}`],
+        city: params.pickupAddress.city,
+        state: params.pickupAddress.state,
+        zip_code: params.pickupAddress.postalCode,
+        country: 'BR',
+      });
+
+      const dropoffAddressStr = JSON.stringify({
+        street_address: [`${params.dropoffAddress.street}, ${params.dropoffAddress.number}`],
+        city: params.dropoffAddress.city,
+        state: params.dropoffAddress.state,
+        zip_code: params.dropoffAddress.postalCode,
+        country: 'BR',
+      });
+
       const response = await fetch(`${this.baseUrl}/customers/${this.customerId}/delivery_quotes`, {
         method: 'POST',
         headers: {
@@ -37,13 +56,20 @@ export class UberDirectGateway implements DeliveryGateway {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          pickup_address: JSON.stringify(params.pickupAddress.toSnapshot()),
-          dropoff_address: JSON.stringify(params.dropoffAddress.toSnapshot()),
+          pickup_address: pickupAddressStr,
+          dropoff_address: dropoffAddressStr,
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`Erro na cotação Uber Direct (HTTP ${response.status})`);
+        const errText = await response.text();
+        if (response.status === 400 && (errText.includes('address_undeliverable') || errText.includes('delivery radius') || errText.includes('not in a deliverable area'))) {
+          Logger.warn('Endereço de entrega fora do raio de cobertura da Uber Direct', { errorText: errText });
+          throw new DeliveryUndeliverableError('Endereço fora da nossa área de entrega (raio máximo de entrega em Mossoró).');
+        }
+
+        Logger.error(`Erro ao consultar cotação na API da Uber Direct (HTTP ${response.status})`, new Error(errText));
+        throw new Error(`Erro na cotação Uber Direct (HTTP ${response.status}): ${errText}`);
       }
 
       const data = await response.json();
@@ -55,7 +81,11 @@ export class UberDirectGateway implements DeliveryGateway {
         fee: Money.fromCents(feeCents),
         expiresAt,
       };
-    } catch {
+    } catch (err) {
+      if (err instanceof DeliveryUndeliverableError) {
+        throw err;
+      }
+      Logger.error('Exceção na cotação da Uber Direct. Utilizando fallback de R$ 12,00.', err);
       return {
         quoteId: `dqt_fallback_${Date.now()}`,
         fee: Money.fromCents(1200),

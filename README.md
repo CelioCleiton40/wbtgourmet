@@ -6,13 +6,13 @@
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38bdf8?style=for-the-badge&logo=tailwindcss)
 ![Stripe](https://img.shields.io/badge/Stripe-Checkout_Hosted-635BFF?style=for-the-badge&logo=stripe)
 ![Uber Direct](https://img.shields.io/badge/Uber_Direct-Delivery-000000?style=for-the-badge&logo=uber)
-![Vitest](https://img.shields.io/badge/Vitest-91_Tests_Passed-6E9F18?style=for-the-badge&logo=vitest)
+![Vitest](https://img.shields.io/badge/Vitest-98_Tests_Passed-6E9F18?style=for-the-badge&logo=vitest)
 ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase)
 ![Zod](https://img.shields.io/badge/Zod-Security_Validation-3E67B1?style=for-the-badge)
 
 Aplicação web moderna de cardápio digital, sistema transacional de pedidos seguro, integração com **Stripe Hosted Checkout**, **Uber Direct Delivery** e comunicação automatizada via WhatsApp / BotConversa para o **WBT Gourmet** (WBT Arena) em Mossoró-RN.
 
-Desenvolvido com **Clean Architecture**, **TDD (Test-Driven Development)**, **Transactional Outbox Pattern**, **Next.js 16 (App Router)**, **React 19**, **Tailwind CSS v4**, **Supabase (PostgreSQL RPC & RLS)**, **Zod** e **Vitest**.
+Desenvolvido com **Clean Architecture**, **TDD (Test-Driven Development)**, **Transactional Outbox Pattern Worker**, **Next.js 16 (App Router + Turbopack)**, **React 19**, **Tailwind CSS v4**, **Supabase (PostgreSQL RPC & RLS)**, **Zod** e **Vitest**.
 
 ---
 
@@ -26,7 +26,7 @@ Desenvolvido com **Clean Architecture**, **TDD (Test-Driven Development)**, **Tr
 - [🛢️ Banco de Dados & Outbox Pattern no Supabase](#️-banco-de-dados--outbox-pattern-no-supabase)
 - [🤖 Formatação para BotConversa & Agentes de IA](#-formatação-para-botconversa--agentes-de-ia)
 - [⚡ Desempenho & Benchmarks](#-desempenho--benchmarks)
-- [🧪 Suíte de Testes Automatizados (91 Testes)](#-suíte-de-testes-automatizados-91-testes)
+- [🧪 Suíte de Testes Automatizados (98 Testes)](#-suíte-de-testes-automatizados-98-testes)
 - [🔒 LGPD & Privacidade](#-lgpd--privacidade)
 - [🛠️ Tecnologias Utilizadas](#️-tecnologias-utilizadas)
 - [🚀 Como Executar o Projeto](#-como-executar-o-projeto)
@@ -39,7 +39,7 @@ Desenvolvido com **Clean Architecture**, **TDD (Test-Driven Development)**, **Tr
 
 O **WBT Gourmet** combina uma interface gastronômica impressionante com um backend resiliente construído sob os princípios da **Clean Architecture**, **SOLID** e **Transactional Outbox Pattern**.
 
-O sistema desacopla o pagamento do envio da entrega. O cliente adiciona itens ao carrinho, calcula o frete em tempo real via **Uber Direct API**, realiza o pagamento seguro em página hospedada pelo **Stripe**, e o despacho do entregador é acionado assincronamente por um worker resiliente, garantindo zero perda de dados e idempotência total.
+O sistema desacopla o pagamento do envio da entrega. O cliente adiciona itens ao carrinho, calcula o frete em tempo real via **Uber Direct API**, realiza o pagamento seguro em página hospedada pelo **Stripe**, e o despacho do entregador é acionado assincronamente por um worker resiliente (`/api/crons/process-outbox`), garantindo zero perda de dados e idempotência total.
 
 ---
 
@@ -51,11 +51,11 @@ O sistema desacopla o pagamento do envio da entrega. O cliente adiciona itens ao
   - **Passo 2**: Endereço de entrega + cotação de frete Uber Direct → redirecionamento para o Stripe Hosted Checkout.
   - **Preservação do Carrinho**: O carrinho não é limpo ao ir para o Stripe; só é zerado após a confirmação real do pagamento.
 - 💳 **Stripe Hosted Checkout Page**: O pagamento ocorre em página segura do Stripe. O backend valida a assinatura HMAC dos webhooks e checa o valor exato pago antes de confirmar o pedido.
-- 🚚 **Cotação e Despacho Uber Direct**: Integração oficial com Uber Direct API para cotações validadas (com expiração de 15 minutos) e despacho automático via **Outbox Pattern**.
+- 🚚 **Cotação e Despacho Uber Direct**: Integração oficial com Uber Direct API para cotações dinâmicas por distância real, tratamento gracioso de raio de entrega (`DeliveryUndeliverableError`) e despacho automático via **Worker do Outbox Pattern** (`/api/crons/process-outbox`).
 - 🔄 **Polling Ativo de Status (`/checkout/success`)**: Página de retorno com consulta dinâmica (`GET /api/orders/status?session_id=...`), exibindo confirmação e link de rastreio em tempo real.
 - 💰 **Cálculo em Centavos Inteiros**: Representação monetária estrita via Value Object `Money`, eliminando erros de ponto flutuante.
 - 🤖 **Integração BotConversa & WhatsApp**: Notificações formatadas e tag de identificação `#PEDIDO_WBT_XXXXXX` para leitura por robôs e humanos.
-- ⚡ **Alta Performance**: Respostas de UseCases abaixo de **1ms**, build 100% estático/dinâmico com Next.js Turbopack.
+- ⚡ **Alta Performance**: Respostas de UseCases abaixo de **1ms**, bundle otimizado com `next/dynamic` e build 100% estático/dinâmico com Next.js Turbopack.
 
 ---
 

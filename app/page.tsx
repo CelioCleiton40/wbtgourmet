@@ -1,3 +1,4 @@
+import dynamic from 'next/dynamic';
 import type { WithContext, Restaurant } from 'schema-dts';
 
 import { menu } from '@/data/menu';
@@ -5,8 +6,9 @@ import { Hero } from '@/components/hero';
 import { MenuNav } from '@/components/menu-nav';
 import { MenuSection } from '@/components/menu-section';
 import { StickyCta } from '@/components/sticky-cta';
-import { CartDrawer } from '@/components/cart-drawer';
-import { LgpdBanner } from '@/components/lgpd-banner';
+
+const CartDrawer = dynamic(() => import('@/components/cart-drawer').then((m) => m.CartDrawer));
+const LgpdBanner = dynamic(() => import('@/components/lgpd-banner').then((m) => m.LgpdBanner));
 
 const SITE_URL = 'https://wbtgourmet.com.br';
 const RESTAURANT_IMAGE = `${SITE_URL}/og-image.png`;
