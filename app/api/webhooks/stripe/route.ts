@@ -2,18 +2,14 @@ import { NextResponse } from 'next/server';
 import { ProcessOutboxDeliveryUseCase } from '@/application/deliveries/process-outbox-delivery/process-outbox-delivery.use-case';
 import { ProcessStripeWebhookUseCase } from '@/application/payments/process-stripe-webhook/process-stripe-webhook.use-case';
 import { getOrderRepository } from '@/infrastructure/repositories/order-repository-factory';
-import {
-  InMemoryOutboxRepository,
-  InMemoryWebhookEventRepository,
-} from '@/infrastructure/repositories/in-memory-outbox-repository';
+import { getOutboxRepository } from '@/infrastructure/repositories/outbox-repository-factory';
+import { getWebhookEventRepository } from '@/infrastructure/repositories/webhook-event-repository-factory';
 import { StripePaymentGateway } from '@/infrastructure/stripe/stripe-payment-gateway';
 import { UberDirectGateway } from '@/infrastructure/uber-direct/uber-direct-gateway';
 import { Logger } from '@/shared/utils/logger';
 
 const stripePaymentGateway = new StripePaymentGateway();
 const uberDirectGateway = new UberDirectGateway();
-const outboxRepo = new InMemoryOutboxRepository();
-const webhookEventRepo = new InMemoryWebhookEventRepository();
 
 export async function POST(request: Request) {
   const startTime = Date.now();
@@ -25,6 +21,8 @@ export async function POST(request: Request) {
     const signature = request.headers.get('stripe-signature') || '';
 
     const orderRepo = getOrderRepository();
+    const outboxRepo = getOutboxRepository();
+    const webhookEventRepo = getWebhookEventRepository('stripe');
 
     const processWebhookUseCase = new ProcessStripeWebhookUseCase(
       stripePaymentGateway,

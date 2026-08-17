@@ -1,15 +1,10 @@
 import { NextResponse } from 'next/server';
 import { ProcessUberWebhookUseCase } from '@/application/deliveries/process-uber-webhook/process-uber-webhook.use-case';
-import { InMemoryWebhookEventRepository } from '@/infrastructure/repositories/in-memory-outbox-repository';
+import { getWebhookEventRepository } from '@/infrastructure/repositories/webhook-event-repository-factory';
 import { UberDirectGateway } from '@/infrastructure/uber-direct/uber-direct-gateway';
 import { Logger } from '@/shared/utils/logger';
 
 const uberDirectGateway = new UberDirectGateway();
-const webhookEventRepo = new InMemoryWebhookEventRepository();
-const processUberWebhookUseCase = new ProcessUberWebhookUseCase(
-  uberDirectGateway,
-  webhookEventRepo
-);
 
 export async function POST(request: Request) {
   const startTime = Date.now();
@@ -18,6 +13,12 @@ export async function POST(request: Request) {
   try {
     const rawBody = await request.text();
     const signature = request.headers.get('x-uber-signature') || '';
+
+    const webhookEventRepo = getWebhookEventRepository('uber');
+    const processUberWebhookUseCase = new ProcessUberWebhookUseCase(
+      uberDirectGateway,
+      webhookEventRepo
+    );
 
     const result = await processUberWebhookUseCase.execute({
       rawBody,

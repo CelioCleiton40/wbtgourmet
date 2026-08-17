@@ -17,7 +17,18 @@ export async function POST(request: Request) {
 
 async function handleCronJob(request: Request): Promise<NextResponse> {
   const startTime = Date.now();
-  const cronSecret = process.env.CRON_SECRET || 'wbt_gourmet_cron_secret_2026';
+  const cronSecret = process.env.CRON_SECRET;
+
+  if (!cronSecret) {
+    Logger.error(
+      'CRON_SECRET não configurado nas variáveis de ambiente do servidor',
+      new Error('MissingCRONSecret')
+    );
+    return NextResponse.json(
+      { error: 'Serviço de agendamento não configurado adequadamente.' },
+      { status: 500 }
+    );
+  }
 
   const authHeader = request.headers.get('authorization') || '';
   const token = authHeader.replace('Bearer ', '').trim();
