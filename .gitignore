@@ -44,4 +44,5 @@ next-env.d.ts
 # scratch and ide
 scratch/
 .gemini/
+supabase/.temp/
 
