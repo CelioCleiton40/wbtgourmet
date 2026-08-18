@@ -7,6 +7,10 @@ import { useCartStore } from '@/store/use-cart-store';
 import type { MenuItem } from '@/data/menu';
 import { Button } from '@/components/ui/button';
 import { Plus, Minus, Check } from 'lucide-react';
+import { getBestUpsellOpportunity } from '@/lib/upsell/engine';
+import { sessionTracker } from '@/lib/upsell/session-tracker';
+import type { UpsellOpportunity } from '@/lib/upsell/types';
+import { UpsellQuickModal } from '@/components/upsell/upsell-quick-modal';
 
 const currency = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -18,12 +22,15 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ item }: ProductCardProps) {
-  const addItem       = useCartStore((s) => s.addItem);
-  const items         = useCartStore((s) => s.items);
-  const updateQuantity = useCartStore((s) => s.updateQuantity);
-  const removeItem    = useCartStore((s) => s.removeItem);
+  const addItem           = useCartStore((s) => s.addItem);
+  const addMultipleItems  = useCartStore((s) => s.addMultipleItems);
+  const items             = useCartStore((s) => s.items);
+  const updateQuantity    = useCartStore((s) => s.updateQuantity);
+  const removeItem        = useCartStore((s) => s.removeItem);
 
   const [justAdded, setJustAdded] = useState(false);
+  const [isUpsellOpen, setIsUpsellOpen] = useState(false);
+  const [currentOpportunity, setCurrentOpportunity] = useState<UpsellOpportunity | null>(null);
 
   const isAvailableToday =
     !item.availability ||
@@ -35,7 +42,34 @@ export function ProductCard({ item }: ProductCardProps) {
   const qty      = cartItem?.quantity ?? 0;
 
   function handleAdd() {
+    // Se o item ainda não está no carrinho, avalia oportunidade de Upsell / Combo
+    if (qty === 0) {
+      const opp = getBestUpsellOpportunity({
+        product: item,
+        cartItems: items,
+        tracker: sessionTracker,
+      });
+
+      if (opp.shouldShow) {
+        setCurrentOpportunity(opp);
+        setIsUpsellOpen(true);
+        return;
+      }
+    }
+
+    // Adição direta
     addItem(item);
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 1000);
+  }
+
+  function handleConfirmUpsell(itemsToAdd: MenuItem[]) {
+    setIsUpsellOpen(false);
+    if (itemsToAdd.length === 1) {
+      addItem(itemsToAdd[0]);
+    } else {
+      addMultipleItems(itemsToAdd);
+    }
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1000);
   }
@@ -180,6 +214,17 @@ export function ProductCard({ item }: ProductCardProps) {
           </div>
         </div>
       </div>
+
+      {/* Modal de Upsell Inteligente & Combo-First */}
+      {isUpsellOpen && currentOpportunity && (
+        <UpsellQuickModal
+          isOpen={isUpsellOpen}
+          product={item}
+          opportunity={currentOpportunity}
+          onClose={() => setIsUpsellOpen(false)}
+          onConfirm={handleConfirmUpsell}
+        />
+      )}
     </div>
   );
 }

@@ -9,6 +9,7 @@ interface CartState {
   items: CartItem[];
   isDrawerOpen: boolean;
   addItem: (item: MenuItem) => void;
+  addMultipleItems: (items: MenuItem[]) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
@@ -33,6 +34,20 @@ export const useCartStore = create<CartState>((set, get) => ({
         };
       }
       return { items: [...state.items, { ...item, quantity: 1 }] };
+    }),
+
+  addMultipleItems: (itemsToAdd) =>
+    set((state) => {
+      const updated = [...state.items];
+      for (const item of itemsToAdd) {
+        const idx = updated.findIndex((i) => i.id === item.id);
+        if (idx >= 0) {
+          updated[idx] = { ...updated[idx], quantity: updated[idx].quantity + 1 };
+        } else {
+          updated.push({ ...item, quantity: 1 });
+        }
+      }
+      return { items: updated };
     }),
 
   removeItem: (id) =>

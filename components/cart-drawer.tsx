@@ -9,6 +9,7 @@ import {
   X, Plus, Minus, ShoppingBag, ShieldCheck, ArrowRight,
   UtensilsCrossed, MapPin, Truck, ChevronLeft, Loader2,
 } from 'lucide-react';
+import { CartSmartRecommendation } from '@/components/cart/cart-smart-recommendation';
 
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -436,7 +437,10 @@ export function CartDrawer() {
 
                   {/* Checkout step 1 */}
                   {items.length > 0 && (
-                    <div className="mt-5 space-y-5 border-t border-g-line pt-5">
+                    <div className="mt-4 space-y-4 border-t border-g-line pt-4">
+                      {/* Recomendação inteligente de bebida/complemento se a refeição estiver incompleta */}
+                      <CartSmartRecommendation />
+
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-g-muted">Subtotal</span>
                         <span className="font-mono text-2xl font-bold text-g-cream">
