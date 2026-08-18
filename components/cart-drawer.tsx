@@ -69,6 +69,13 @@ export function CartDrawer() {
   async function fetchAddressByCep(cleanCep: string) {
     if (cleanCep.length !== 8) return;
 
+    // Verificação imediata de faixa de CEP de Mossoró-RN (59600-000 a 59649-898)
+    const numCep = parseInt(cleanCep, 10);
+    if (isNaN(numCep) || numCep < 59600000 || numCep > 59649898) {
+      setError('A WBT Gourmet entrega exclusivamente em Mossoró-RN (CEPs 59600-000 a 59649-898). O CEP informado não é atendido.');
+      return;
+    }
+
     setLoadingCep(true);
     setError('');
     try {
@@ -79,6 +86,18 @@ export function CartDrawer() {
           setError('CEP não encontrado. Verifique os números ou preencha manualmente.');
           return;
         }
+
+        const cleanCity = (data.localidade || '')
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .trim()
+          .toLowerCase();
+
+        if (data.uf !== 'RN' || cleanCity !== 'mossoro') {
+          setError('A WBT Gourmet realiza entregas apenas em Mossoró-RN. O CEP informado pertence a outra localidade.');
+          return;
+        }
+
         setAddress((prev) => ({
           ...prev,
           postalCode: cleanCep.replace(/^(\d{5})(\d{3})$/, '$1-$2'),
@@ -164,6 +183,13 @@ export function CartDrawer() {
     const cleanCep = address.postalCode.replace(/\D/g, '');
     if (!address.street || !address.number || !address.district || !address.city || !address.state || cleanCep.length !== 8) {
       setError('Preencha rua, número, bairro, cidade, estado e CEP válido (8 dígitos).');
+      return;
+    }
+
+    const numCep = parseInt(cleanCep, 10);
+    const cleanCity = address.city.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+    if (isNaN(numCep) || numCep < 59600000 || numCep > 59649898 || address.state.toUpperCase() !== 'RN' || cleanCity !== 'mossoro') {
+      setError('O delivery da WBT Gourmet atende exclusivamente a cidade de Mossoró-RN (CEPs 59600-000 a 59649-898).');
       return;
     }
 

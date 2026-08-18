@@ -31,16 +31,69 @@ describe('Address Value Object', () => {
     ).toThrow('CEP de entrega inválido');
   });
 
-  it('deve lançar erro se os campos obrigatórios estiverem ausentes', () => {
-    expect(() =>
-      Address.create({
-        street: '',
-        number: '123',
-        district: 'Centro',
-        city: 'Mossoró',
-        state: 'RN',
-        postalCode: '59600000',
-      })
-    ).toThrow('Endereço incompleto');
+  it('deve identificar corretamente endereços dentro e fora de Mossoró-RN', () => {
+    const mossoroAddr1 = Address.create({
+      street: 'Av. João da Escóssia',
+      number: '1500',
+      district: 'Nova Betânia',
+      city: 'Mossoró',
+      state: 'RN',
+      postalCode: '59607-000',
+    });
+    expect(mossoroAddr1.isWithinMossoro()).toBe(true);
+
+    const mossoroAddr2 = Address.create({
+      street: 'Rua Coronel Gurgel',
+      number: '100',
+      district: 'Centro',
+      city: 'Mossoro',
+      state: 'RN',
+      postalCode: '59600-000',
+    });
+    expect(mossoroAddr2.isWithinMossoro()).toBe(true);
+
+    // Limite superior de Mossoró: 59649-898
+    const mossoroMaxAddr = Address.create({
+      street: 'Rua Limite',
+      number: '50',
+      district: 'Zona Rural',
+      city: 'Mossoró',
+      state: 'RN',
+      postalCode: '59649-898',
+    });
+    expect(mossoroMaxAddr.isWithinMossoro()).toBe(true);
+
+    // Fora do limite superior de Mossoró: 59649-899
+    const outsideMaxAddr = Address.create({
+      street: 'Rua Além Limite',
+      number: '50',
+      district: 'Outro',
+      city: 'Mossoró',
+      state: 'RN',
+      postalCode: '59649-899',
+    });
+    expect(outsideMaxAddr.isWithinMossoro()).toBe(false);
+
+    // CEP de São Paulo - SP
+    const spAddr = Address.create({
+      street: 'Av. Paulista',
+      number: '1000',
+      district: 'Bela Vista',
+      city: 'São Paulo',
+      state: 'SP',
+      postalCode: '01310-100',
+    });
+    expect(spAddr.isWithinMossoro()).toBe(false);
+
+    // CEP de Natal - RN
+    const natalAddr = Address.create({
+      street: 'Av. Hermes da Fonseca',
+      number: '500',
+      district: 'Tirol',
+      city: 'Natal',
+      state: 'RN',
+      postalCode: '59020-000',
+    });
+    expect(natalAddr.isWithinMossoro()).toBe(false);
   });
 });

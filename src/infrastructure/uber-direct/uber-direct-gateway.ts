@@ -22,9 +22,21 @@ export class UberDirectGateway implements DeliveryGateway {
   }
 
   public async getQuote(params: DeliveryQuoteParams): Promise<DeliveryQuoteResult> {
+    // 1. Validação estrita de raio geográfico: WBT Gourmet entrega apenas em Mossoró-RN
+    if (!params.dropoffAddress.isWithinMossoro()) {
+      Logger.warn('Cotação recusada: endereço fora de Mossoró-RN', {
+        postalCode: params.dropoffAddress.postalCode,
+        city: params.dropoffAddress.city,
+        state: params.dropoffAddress.state,
+      });
+      throw new DeliveryUndeliverableError(
+        'Endereço fora da nossa área de entrega. O delivery da WBT Gourmet atende exclusivamente a cidade de Mossoró-RN (CEPs 59600-000 a 59649-898).'
+      );
+    }
+
     const token = await UberTokenProvider.getToken();
     if (token === 'mock_uber_oauth_token') {
-      Logger.warn('Utilizando cotação mock de fallback (R$ 12,00) pois o token da Uber Direct é inválido ou ausente.');
+      Logger.warn('Utilizando cotação mock de fallback (R$ 12,00) para endereço válido em Mossoró-RN.');
       return {
         quoteId: `dqt_mock_${Date.now()}`,
         fee: Money.fromCents(1200), // R$ 12,00 em testes

@@ -2,6 +2,7 @@ import { DeliveryGateway } from '@/domain/deliveries/services/delivery-gateway';
 import { DeliveryQuote } from '@/domain/deliveries/entities/delivery-quote';
 import { DeliveryQuoteRepository } from '@/domain/deliveries/repositories/delivery-quote-repository';
 import { Address, AddressProps } from '@/domain/orders/value-objects/address';
+import { DeliveryUndeliverableError } from '@/shared/errors/domain-errors';
 
 export interface QuoteDeliveryInput {
   dropoffAddress: AddressProps;
@@ -24,6 +25,15 @@ export class QuoteDeliveryUseCase {
   ) {}
 
   public async execute(input: QuoteDeliveryInput): Promise<QuoteDeliveryOutput> {
+    const dropoffAddress = Address.create(input.dropoffAddress);
+
+    // Validação de raio de atendimento: Mossoró-RN
+    if (!dropoffAddress.isWithinMossoro()) {
+      throw new DeliveryUndeliverableError(
+        'Endereço fora da nossa área de entrega. O delivery da WBT Gourmet atende exclusivamente a cidade de Mossoró-RN (CEPs 59600-000 a 59649-898).'
+      );
+    }
+
     // Endereço de retirada oficial do estabelecimento (WBT Gourmet)
     const pickupAddress = Address.create({
       street: process.env.RESTAURANT_STREET || 'Avenida João da Escóssia',
@@ -33,8 +43,6 @@ export class QuoteDeliveryUseCase {
       state: process.env.RESTAURANT_STATE || 'RN',
       postalCode: process.env.RESTAURANT_POSTAL_CODE || '59607000',
     });
-
-    const dropoffAddress = Address.create(input.dropoffAddress);
 
     // Obtém cotação do gateway (Uber Direct ou mock)
     const quoteResult = await this.deliveryGateway.getQuote({

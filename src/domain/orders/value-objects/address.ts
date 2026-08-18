@@ -46,6 +46,22 @@ export class Address {
     return new Address(props);
   }
 
+  public isWithinMossoro(): boolean {
+    const numericCep = parseInt(this.postalCode, 10);
+    const isMossoroCep = !isNaN(numericCep) && numericCep >= 59600000 && numericCep <= 59649898;
+    const cleanCity = this.city
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase();
+    const isMossoroCity = cleanCity === 'mossoro';
+    const isMossoroState = this.state.toUpperCase().trim() === 'RN';
+
+    // Para entrega ser válida em Mossoró:
+    // O CEP deve estar na faixa de Mossoró (59600-000 a 59649-898) e estado RN
+    return isMossoroCep && (isMossoroCity || isMossoroState);
+  }
+
   public toSnapshot(): AddressProps {
     return {
       street: this.street,
