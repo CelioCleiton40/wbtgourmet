@@ -21,7 +21,7 @@ export const UPSELL_RULES: ProductUpsellRule[] = [
       priority: 100,
     },
     primaryAlternativeId: 'pt-batata-frita',
-    quickAddonIds: ['ad-queijo', 'ad-bacon', 'ad-ovo', 'ad-molho'],
+    quickAddonIds: ['ad-queijo', 'ad-bacon', 'ad-ovo', 'ad-molho-alho', 'ad-molho-azeitona', 'ad-molho-rose'],
     drinkFallbackId: 'rf-coca',
   },
 
@@ -29,25 +29,41 @@ export const UPSELL_RULES: ProductUpsellRule[] = [
   {
     targetCategory: 'sanduiches',
     primaryAlternativeId: 'pt-batata-frita',
-    quickAddonIds: ['ad-queijo', 'ad-bacon', 'ad-ovo', 'ad-molho'],
+    quickAddonIds: ['ad-queijo', 'ad-bacon', 'ad-ovo', 'ad-molho-alho', 'ad-molho-azeitona', 'ad-molho-rose'],
     drinkFallbackId: 'rf-coca',
   },
 
-  // ─── 3. Pratos com Filé Mignon e Camarão ────────────────────────────────────
+  // ─── 3. Pratos com Filé Mignon e Camarão (Apenas Bebidas, Sem Adicionais) ───
   {
     targetCategory: 'file-mignon',
-    primaryAlternativeId: 'pt-batata-frita',
-    quickAddonIds: ['ad-file', 'ad-queijo', 'ad-molho'],
-    drinkFallbackId: 'sc-laranja',
+    primaryAlternativeId: 'sc-laranja',
+    quickAddonIds: [],
+    drinkFallbackId: 'rf-coca',
   },
   {
     targetCategory: 'camarao',
-    primaryAlternativeId: 'pt-batata-frita',
-    quickAddonIds: ['ad-queijo', 'ad-molho'],
-    drinkFallbackId: 'sc-laranja',
+    primaryAlternativeId: 'sc-laranja',
+    quickAddonIds: [],
+    drinkFallbackId: 'rf-coca',
   },
 
-  // ─── 4. Tapiocas e Crepiocas ────────────────────────────────────────────────
+  // ─── 4. Panquecas (Molho Incluso Obrigatório + Apenas Bebida, Sem Adicionais) 
+  {
+    targetCategory: 'panquecas',
+    primaryAlternativeId: 'sc-laranja',
+    quickAddonIds: [],
+    drinkFallbackId: 'rf-coca',
+  },
+
+  // ─── 5. Espetinhos (Apenas Bebida, Sem Molho e Sem Adicionais) ──────────────
+  {
+    targetCategory: 'espetinhos',
+    primaryAlternativeId: 'rf-coca',
+    quickAddonIds: [],
+    drinkFallbackId: 'rf-coca',
+  },
+
+  // ─── 6. Tapiocas e Crepiocas (Com Adicionais e Bebida) ──────────────────────
   {
     targetCategory: 'tapiocas',
     primaryAlternativeId: 'sc-laranja',
@@ -61,21 +77,29 @@ export const UPSELL_RULES: ProductUpsellRule[] = [
     drinkFallbackId: 'sc-laranja',
   },
 
-  // ─── 5. Petiscos e Salgados ────────────────────────────────────────────────
+  // ─── 7. Sabores Regionais / Cuscuz (Com Adicionais e Bebida) ────────────────
+  {
+    targetCategory: 'sabores-regionais',
+    primaryAlternativeId: 'sc-laranja',
+    quickAddonIds: ['ad-queijo', 'ad-bacon', 'ad-ovo', 'ad-frango', 'ad-calabresa'],
+    drinkFallbackId: 'sc-laranja',
+  },
+
+  // ─── 8. Petiscos e Salgados (Com Adicionais e Bebida) ───────────────────────
   {
     targetCategory: 'petiscos',
     primaryAlternativeId: 'rf-coca',
-    quickAddonIds: ['ad-molho', 'ad-bacon', 'ad-queijo'],
+    quickAddonIds: ['ad-molho-alho', 'ad-molho-azeitona', 'ad-molho-rose', 'ad-bacon', 'ad-queijo'],
     drinkFallbackId: 'rf-coca',
   },
   {
     targetCategory: 'salgados',
     primaryAlternativeId: 'rf-guarana',
-    quickAddonIds: ['ad-molho'],
+    quickAddonIds: ['ad-molho-alho', 'ad-molho-azeitona', 'ad-molho-rose'],
     drinkFallbackId: 'rf-guarana',
   },
 
-  // ─── 6. Açaí ────────────────────────────────────────────────────────────────
+  // ─── 9. Açaí ────────────────────────────────────────────────────────────────
   {
     targetCategory: 'acai',
     primaryAlternativeId: 'ag-sem-gas-500',

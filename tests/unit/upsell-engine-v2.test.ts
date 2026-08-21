@@ -67,6 +67,48 @@ describe('Upsell Engine V2 — Single High-Value Opportunity & Combo-First', () 
     }
   });
 
+  it('Filé Mignon e Camarão NÃO devem ter adicionais e devem sugerir APENAS bebida se não houver no carrinho', () => {
+    const fileMignon = getMenuItemById('fm-gorgonzola')!;
+    const camarao = getMenuItemById('cam-molho-branco')!;
+    const coca = getMenuItemById('rf-coca')!;
+
+    // 1. Carrinho vazio: sugere apenas bebida
+    const oppFile = getBestUpsellOpportunity({ product: fileMignon, cartItems: [] });
+    expect(oppFile.shouldShow).toBe(true);
+    expect(oppFile.primaryRecommendation?.type).toBe('drink');
+    expect(oppFile.quickAddons).toHaveLength(0);
+
+    const oppCam = getBestUpsellOpportunity({ product: camarao, cartItems: [] });
+    expect(oppCam.shouldShow).toBe(true);
+    expect(oppCam.primaryRecommendation?.type).toBe('drink');
+    expect(oppCam.quickAddons).toHaveLength(0);
+
+    // 2. Carrinho já possui bebida: não abre upsell
+    const oppFileComBebida = getBestUpsellOpportunity({ product: fileMignon, cartItems: [coca] });
+    expect(oppFileComBebida.shouldShow).toBe(false);
+  });
+
+  it('Panquecas e Espetinhos NÃO devem ter adicionais e devem sugerir APENAS bebida se não houver no carrinho', () => {
+    const panqueca = getMenuItemById('pq-carne-sol')!;
+    const espetinho = getMenuItemById('esp-padrao')!;
+    const coca = getMenuItemById('rf-coca')!;
+
+    // 1. Carrinho sem bebida: sugere bebida e adicionais vazios
+    const oppPq = getBestUpsellOpportunity({ product: panqueca, cartItems: [] });
+    expect(oppPq.shouldShow).toBe(true);
+    expect(oppPq.primaryRecommendation?.type).toBe('drink');
+    expect(oppPq.quickAddons).toHaveLength(0);
+
+    const oppEsp = getBestUpsellOpportunity({ product: espetinho, cartItems: [] });
+    expect(oppEsp.shouldShow).toBe(true);
+    expect(oppEsp.primaryRecommendation?.type).toBe('drink');
+    expect(oppEsp.quickAddons).toHaveLength(0);
+
+    // 2. Carrinho já com bebida: espetinho não precisa de modal (panqueca tem o molho obrigatório via UI)
+    const oppEspComBebida = getBestUpsellOpportunity({ product: espetinho, cartItems: [coca] });
+    expect(oppEspComBebida.shouldShow).toBe(false);
+  });
+
   it('deve respeitar a REGRA DE PRESSÃO COMERCIAL se o usuário já recusou o produto na sessão', () => {
     const smashFile = getMenuItemById('sd-smash-file')!;
 

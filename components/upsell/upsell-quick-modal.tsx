@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { MenuItem } from '@/data/menu';
 import type { UpsellOpportunity } from '@/lib/upsell/types';
 import { sessionTracker } from '@/lib/upsell/session-tracker';
+import { MANDATORY_SAUCES, isSauceMandatory } from '@/lib/sauces';
 import { Button } from '@/components/ui/button';
 import { X, Check, Flame, Sparkles, Plus } from 'lucide-react';
 
@@ -19,7 +20,7 @@ interface UpsellQuickModalProps {
   product: MenuItem;
   opportunity: UpsellOpportunity;
   onClose: () => void;
-  onConfirm: (itemsToAdd: MenuItem[]) => void;
+  onConfirm: (itemsToAdd: MenuItem[], selectedSauce?: string) => void;
 }
 
 export function UpsellQuickModal({
@@ -30,8 +31,10 @@ export function UpsellQuickModal({
   onConfirm,
 }: UpsellQuickModalProps) {
   const [selectedAddons, setSelectedAddons] = useState<MenuItem[]>([]);
+  const requiresSauce = isSauceMandatory(product.category);
+  const [selectedSauce, setSelectedSauce] = useState<string>(MANDATORY_SAUCES[0].name);
 
-  if (!isOpen || !opportunity.shouldShow) return null;
+  if (!isOpen) return null;
 
   const primary = opportunity.primaryRecommendation;
   const isCombo = primary?.type === 'combo';
@@ -47,19 +50,22 @@ export function UpsellQuickModal({
   // Ação 1: Aceitar o Combo ou Recomendação Principal + Adicionais selecionados
   function handleAcceptPrimary() {
     const baseItems = primary?.itemsToAdd || [product];
-    onConfirm([...baseItems, ...selectedAddons]);
+    const sauceToPass = requiresSauce ? selectedSauce : undefined;
+    onConfirm([...baseItems, ...selectedAddons], sauceToPass);
   }
 
   // Ação 2: Aceitar apenas o produto base + Adicionais selecionados (sem o combo/acompanhamento)
   function handleAcceptProductOnly() {
     sessionTracker.recordDecline(product.id);
-    onConfirm([product, ...selectedAddons]);
+    const sauceToPass = requiresSauce ? selectedSauce : undefined;
+    onConfirm([product, ...selectedAddons], sauceToPass);
   }
 
-  // Ação 3: Fechar ou Recusar completamente (apenas o produto puro)
+  // Ação 3: Fechar ou Recusar completamente (apenas o produto puro com molho)
   function handleDecline() {
     sessionTracker.recordDecline(product.id);
-    onConfirm([product]);
+    const sauceToPass = requiresSauce ? selectedSauce : undefined;
+    onConfirm([product], sauceToPass);
   }
 
   const primaryTotalPrice =
@@ -113,7 +119,7 @@ export function UpsellQuickModal({
               <div>
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-g-green flex items-center gap-1">
                   <Sparkles className="h-3 w-3" />
-                  Excelente Escolha
+                  {requiresSauce ? 'Personalize seu Pedido' : 'Excelente Escolha'}
                 </span>
                 <h2 className="font-display text-lg sm:text-xl font-bold text-g-cream leading-tight">
                   {product.name}
@@ -126,6 +132,50 @@ export function UpsellQuickModal({
           </div>
 
           <div className="max-h-[70vh] overflow-y-auto p-5 sm:p-6 space-y-5">
+            {/* ─── 0. SELEÇÃO OBRIGATÓRIA DE MOLHO (SANDUÍCHES E PANQUECAS) ─── */}
+            {requiresSauce && (
+              <div className="rounded-2xl border border-g-gold/40 bg-gradient-to-b from-g-gold/10 via-g-surface-2 to-g-surface-2 p-4 relative shadow-md">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-g-gold flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Escolha seu Molho
+                  </span>
+                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-g-gold text-black">
+                    Obrigatório (Incluso)
+                  </span>
+                </div>
+                <p className="text-xs text-g-muted mb-3">
+                  Selecione 1 opção de molho artesanal que acompanha o seu pedido:
+                </p>
+
+                <div className="grid grid-cols-3 gap-2">
+                  {MANDATORY_SAUCES.map((sauce) => {
+                    const isSelected = selectedSauce === sauce.name;
+                    return (
+                      <button
+                        key={sauce.id}
+                        type="button"
+                        onClick={() => setSelectedSauce(sauce.name)}
+                        className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all ${
+                          isSelected
+                            ? 'border-g-gold bg-g-gold/20 text-g-cream ring-2 ring-g-gold/50 shadow-md scale-[1.02]'
+                            : 'border-g-line bg-g-surface hover:border-g-line/80 text-g-muted hover:text-g-cream'
+                        }`}
+                      >
+                        <span className="text-2xl mb-1">{sauce.emoji}</span>
+                        <span className="text-xs font-bold leading-tight">{sauce.name}</span>
+                        {isSelected && (
+                          <span className="mt-1.5 inline-flex items-center gap-0.5 text-[10px] font-bold text-g-gold">
+                            <Check className="h-3 w-3 stroke-[3]" /> Escolhido
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* ─── 1. CARD DE DESTAQUE: COMBO OU ACOMPANHAMENTO PRINCIPAL ─── */}
             {primary && (
               <div className="rounded-2xl border border-g-green/40 bg-gradient-to-b from-g-green/10 via-g-surface-2 to-g-surface-2 p-4.5 relative overflow-hidden shadow-lg">
@@ -183,7 +233,7 @@ export function UpsellQuickModal({
             {opportunity.quickAddons && opportunity.quickAddons.length > 0 && (
               <div className="space-y-2.5">
                 <p className="text-xs font-semibold uppercase tracking-wider text-g-muted">
-                  Quer turbinar com adicionais?
+                  Quer turbinar com adicionais extras?
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   {opportunity.quickAddons.map((addon) => {
@@ -239,7 +289,7 @@ export function UpsellQuickModal({
               size="sm"
               className="w-full sm:w-auto order-1 sm:order-2"
             >
-              Adicionar ao Carrinho
+              {requiresSauce ? `Adicionar c/ ${selectedSauce}` : 'Adicionar ao Carrinho'}
             </Button>
           </div>
         </motion.div>

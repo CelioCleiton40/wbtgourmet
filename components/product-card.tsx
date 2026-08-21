@@ -10,6 +10,7 @@ import { Plus, Minus, Check } from 'lucide-react';
 import { getBestUpsellOpportunity } from '@/lib/upsell/engine';
 import { sessionTracker } from '@/lib/upsell/session-tracker';
 import type { UpsellOpportunity } from '@/lib/upsell/types';
+import { isSauceMandatory } from '@/lib/sauces';
 import { UpsellQuickModal } from '@/components/upsell/upsell-quick-modal';
 
 const currency = new Intl.NumberFormat('pt-BR', {
@@ -38,11 +39,12 @@ export function ProductCard({ item }: ProductCardProps) {
 
   if (!isAvailableToday) return null;
 
-  const cartItem = items.find((i) => i.id === item.id);
-  const qty      = cartItem?.quantity ?? 0;
+  const matchingItems = items.filter((i) => i.id === item.id);
+  const qty = matchingItems.reduce((sum, i) => sum + i.quantity, 0);
+  const requiresSauce = isSauceMandatory(item.category);
 
   function handleAdd() {
-    // Se o item ainda não está no carrinho, avalia oportunidade de Upsell / Combo
+    // Se o item ainda não está no carrinho, avalia oportunidade de Upsell / Combo ou seleção de molho obrigatório
     if (qty === 0) {
       const opp = getBestUpsellOpportunity({
         product: item,
@@ -50,25 +52,30 @@ export function ProductCard({ item }: ProductCardProps) {
         tracker: sessionTracker,
       });
 
-      if (opp.shouldShow) {
-        setCurrentOpportunity(opp);
+      if (opp.shouldShow || requiresSauce) {
+        setCurrentOpportunity(opp.shouldShow ? opp : { shouldShow: true });
         setIsUpsellOpen(true);
         return;
       }
     }
 
-    // Adição direta
-    addItem(item);
+    // Adição direta se não precisar de molho ou se já estiver no carrinho
+    const lastItem = matchingItems[matchingItems.length - 1];
+    if (lastItem) {
+      addItem(lastItem, lastItem.selectedSauce);
+    } else {
+      addItem(item);
+    }
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1000);
   }
 
-  function handleConfirmUpsell(itemsToAdd: MenuItem[]) {
+  function handleConfirmUpsell(itemsToAdd: MenuItem[], selectedSauce?: string) {
     setIsUpsellOpen(false);
     if (itemsToAdd.length === 1) {
-      addItem(itemsToAdd[0]);
+      addItem(itemsToAdd[0], selectedSauce);
     } else {
-      addMultipleItems(itemsToAdd);
+      addMultipleItems(itemsToAdd, selectedSauce);
     }
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1000);
@@ -188,9 +195,17 @@ export function ProductCard({ item }: ProductCardProps) {
               <div className="inline-flex items-center gap-1 rounded-full border border-g-green/30 bg-g-surface-2 p-0.5 shadow-xs">
                 <button
                   id={`dec-${item.id}`}
-                  onClick={() =>
-                    qty === 1 ? removeItem(item.id) : updateQuantity(item.id, qty - 1)
-                  }
+                  onClick={() => {
+                    const lastItem = matchingItems[matchingItems.length - 1];
+                    if (lastItem) {
+                      const key = lastItem.cartItemId || lastItem.id;
+                      if (lastItem.quantity === 1) {
+                        removeItem(key);
+                      } else {
+                        updateQuantity(key, lastItem.quantity - 1);
+                      }
+                    }
+                  }}
                   aria-label={`Remover um ${item.name}`}
                   className="flex h-7 w-7 items-center justify-center rounded-full text-g-muted hover:bg-g-line hover:text-g-cream transition-colors"
                 >
@@ -203,7 +218,14 @@ export function ProductCard({ item }: ProductCardProps) {
 
                 <button
                   id={`inc-${item.id}`}
-                  onClick={() => addItem(item)}
+                  onClick={() => {
+                    const lastItem = matchingItems[matchingItems.length - 1];
+                    if (lastItem) {
+                      addItem(lastItem, lastItem.selectedSauce);
+                    } else {
+                      addItem(item);
+                    }
+                  }}
                   aria-label={`Adicionar mais ${item.name}`}
                   className="flex h-7 w-7 items-center justify-center rounded-full bg-g-green text-white hover:bg-g-green-lt transition-colors shadow-xs"
                 >

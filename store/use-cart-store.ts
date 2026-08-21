@@ -3,15 +3,17 @@ import type { MenuItem } from '@/data/menu';
 
 export interface CartItem extends MenuItem {
   quantity: number;
+  selectedSauce?: string;
+  cartItemId?: string;
 }
 
 interface CartState {
   items: CartItem[];
   isDrawerOpen: boolean;
-  addItem: (item: MenuItem) => void;
-  addMultipleItems: (items: MenuItem[]) => void;
-  removeItem: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
+  addItem: (item: MenuItem, selectedSauce?: string) => void;
+  addMultipleItems: (items: MenuItem[], mainItemSauce?: string) => void;
+  removeItem: (idOrCartItemId: string) => void;
+  updateQuantity: (idOrCartItemId: string, quantity: number) => void;
   clearCart: () => void;
   openDrawer: () => void;
   closeDrawer: () => void;
@@ -19,48 +21,91 @@ interface CartState {
   itemCount: () => number;
 }
 
+function getItemKey(item: MenuItem, selectedSauce?: string): string {
+  const sauce = selectedSauce || (item as CartItem).selectedSauce;
+  return sauce ? `${item.id}-${sauce}` : item.id;
+}
+
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
   isDrawerOpen: false,
 
-  addItem: (item) =>
+  addItem: (item, selectedSauce) =>
     set((state) => {
-      const existing = state.items.find((i) => i.id === item.id);
+      const sauce = selectedSauce || (item as CartItem).selectedSauce;
+      const key = getItemKey(item, sauce);
+      const existing = state.items.find(
+        (i) => (i.cartItemId || i.id) === key
+      );
+
       if (existing) {
         return {
           items: state.items.map((i) =>
-            i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
+            (i.cartItemId || i.id) === key
+              ? { ...i, quantity: i.quantity + 1 }
+              : i
           ),
         };
       }
-      return { items: [...state.items, { ...item, quantity: 1 }] };
+
+      return {
+        items: [
+          ...state.items,
+          { ...item, quantity: 1, selectedSauce: sauce, cartItemId: key },
+        ],
+      };
     }),
 
-  addMultipleItems: (itemsToAdd) =>
+  addMultipleItems: (itemsToAdd, mainItemSauce) =>
     set((state) => {
       const updated = [...state.items];
-      for (const item of itemsToAdd) {
-        const idx = updated.findIndex((i) => i.id === item.id);
+      for (let index = 0; index < itemsToAdd.length; index++) {
+        const item = itemsToAdd[index];
+        // Atribui o molho ao item principal (primeiro item) se fornecido
+        const sauce = (item as CartItem).selectedSauce || (index === 0 ? mainItemSauce : undefined);
+        const key = getItemKey(item, sauce);
+        const idx = updated.findIndex(
+          (i) => (i.cartItemId || i.id) === key
+        );
+
         if (idx >= 0) {
-          updated[idx] = { ...updated[idx], quantity: updated[idx].quantity + 1 };
+          updated[idx] = {
+            ...updated[idx],
+            quantity: updated[idx].quantity + 1,
+          };
         } else {
-          updated.push({ ...item, quantity: 1 });
+          updated.push({
+            ...item,
+            quantity: 1,
+            selectedSauce: sauce,
+            cartItemId: key,
+          });
         }
       }
       return { items: updated };
     }),
 
-  removeItem: (id) =>
-    set((state) => ({ items: state.items.filter((i) => i.id !== id) })),
+  removeItem: (idOrCartItemId) =>
+    set((state) => ({
+      items: state.items.filter(
+        (i) => (i.cartItemId || i.id) !== idOrCartItemId && i.id !== idOrCartItemId
+      ),
+    })),
 
-  updateQuantity: (id, quantity) =>
+  updateQuantity: (idOrCartItemId, quantity) =>
     set((state) => {
       if (quantity <= 0) {
-        return { items: state.items.filter((i) => i.id !== id) };
+        return {
+          items: state.items.filter(
+            (i) => (i.cartItemId || i.id) !== idOrCartItemId
+          ),
+        };
       }
       return {
         items: state.items.map((i) =>
-          i.id === id ? { ...i, quantity } : i
+          (i.cartItemId || i.id) === idOrCartItemId
+            ? { ...i, quantity }
+            : i
         ),
       };
     }),

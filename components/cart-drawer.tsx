@@ -249,11 +249,17 @@ export function CartDrawer() {
     try {
       // 1. Criar o pedido vinculando a cotação de frete oficial
       const orderIdempotencyKey = crypto.randomUUID();
+      const aggregatedItemsMap = new Map<string, number>();
+      for (const item of items) {
+        aggregatedItemsMap.set(item.id, (aggregatedItemsMap.get(item.id) || 0) + item.quantity);
+      }
+      const payloadItems = Array.from(aggregatedItemsMap.entries()).map(([id, quantity]) => ({ id, quantity }));
+
       const orderRes = await fetch('/api/orders/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items: items.map(({ id, quantity }) => ({ id, quantity })),
+          items: payloadItems,
           customerPhone: cleanPhone,
           idempotencyKey: orderIdempotencyKey,
           quoteId: quoteId,
@@ -389,47 +395,55 @@ export function CartDrawer() {
                     ) : (
                       <ul className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
                         <AnimatePresence initial={false}>
-                          {items.map((item) => (
-                            <motion.li
-                              key={item.id}
-                              initial={{ opacity: 0, x: 20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              exit={{ opacity: 0, x: -20, height: 0 }}
-                              transition={{ duration: 0.2 }}
-                              className="flex items-center justify-between gap-3 rounded-xl border border-g-line bg-g-surface-2 p-3"
-                            >
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-semibold text-g-cream truncate">{item.name}</p>
-                                <p className="mt-0.5 font-mono text-xs text-g-muted">
-                                  {currency.format(item.price)} × {item.quantity}{' '}={' '}
-                                  <span className="text-g-gold font-semibold">
-                                    {currency.format(item.price * item.quantity)}
+                          {items.map((item) => {
+                            const itemKey = item.cartItemId || item.id;
+                            return (
+                              <motion.li
+                                key={itemKey}
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20, height: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="flex items-center justify-between gap-3 rounded-xl border border-g-line bg-g-surface-2 p-3"
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-semibold text-g-cream truncate">{item.name}</p>
+                                  {item.selectedSauce && (
+                                    <p className="text-[11px] font-medium text-g-gold mt-0.5">
+                                      ✨ Molho: <span className="text-g-cream font-semibold">{item.selectedSauce}</span>
+                                    </p>
+                                  )}
+                                  <p className="mt-0.5 font-mono text-xs text-g-muted">
+                                    {currency.format(item.price)} × {item.quantity}{' '}={' '}
+                                    <span className="text-g-gold font-semibold">
+                                      {currency.format(item.price * item.quantity)}
+                                    </span>
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-1 rounded-full border border-g-line bg-g-dark p-0.5 shrink-0">
+                                  <button
+                                    id={`cart-dec-${itemKey}`}
+                                    onClick={() => item.quantity === 1 ? removeItem(itemKey) : updateQty(itemKey, item.quantity - 1)}
+                                    aria-label={`Remover um ${item.name}`}
+                                    className="flex h-6 w-6 items-center justify-center rounded-full text-g-muted hover:bg-g-surface-2 hover:text-g-cream transition-colors"
+                                  >
+                                    <Minus className="h-2.5 w-2.5" />
+                                  </button>
+                                  <span className="min-w-[18px] text-center font-mono text-xs font-bold text-g-green">
+                                    {item.quantity}
                                   </span>
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-1 rounded-full border border-g-line bg-g-dark p-0.5 shrink-0">
-                                <button
-                                  id={`cart-dec-${item.id}`}
-                                  onClick={() => item.quantity === 1 ? removeItem(item.id) : updateQty(item.id, item.quantity - 1)}
-                                  aria-label={`Remover um ${item.name}`}
-                                  className="flex h-6 w-6 items-center justify-center rounded-full text-g-muted hover:bg-g-surface-2 hover:text-g-cream transition-colors"
-                                >
-                                  <Minus className="h-2.5 w-2.5" />
-                                </button>
-                                <span className="min-w-[18px] text-center font-mono text-xs font-bold text-g-green">
-                                  {item.quantity}
-                                </span>
-                                <button
-                                  id={`cart-inc-${item.id}`}
-                                  onClick={() => updateQty(item.id, item.quantity + 1)}
-                                  aria-label={`Adicionar mais ${item.name}`}
-                                  className="flex h-6 w-6 items-center justify-center rounded-full bg-g-green text-g-dark hover:bg-g-green-lt transition-colors"
-                                >
-                                  <Plus className="h-2.5 w-2.5" />
-                                </button>
-                              </div>
-                            </motion.li>
-                          ))}
+                                  <button
+                                    id={`cart-inc-${itemKey}`}
+                                    onClick={() => updateQty(itemKey, item.quantity + 1)}
+                                    aria-label={`Adicionar mais ${item.name}`}
+                                    className="flex h-6 w-6 items-center justify-center rounded-full bg-g-green text-g-dark hover:bg-g-green-lt transition-colors"
+                                  >
+                                    <Plus className="h-2.5 w-2.5" />
+                                  </button>
+                                </div>
+                              </motion.li>
+                            );
+                          })}
                         </AnimatePresence>
                       </ul>
                     )}
