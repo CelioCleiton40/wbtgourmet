@@ -6,11 +6,16 @@ import { getCheckoutSessionRepository } from '@/infrastructure/repositories/chec
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const sessionId = searchParams.get('session_id');
+    const sessionId =
+      searchParams.get('session_id') ||
+      searchParams.get('preference_id') ||
+      searchParams.get('payment_id') ||
+      searchParams.get('order_code') ||
+      searchParams.get('external_reference');
 
-    if (!sessionId || !sessionId.startsWith('cs_')) {
+    if (!sessionId || sessionId.length < 3) {
       return NextResponse.json(
-        { error: 'session_id inválido ou ausente.' },
+        { error: 'Parâmetro de identificação do pedido ausente ou inválido.' },
         { status: 400 }
       );
     }

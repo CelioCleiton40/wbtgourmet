@@ -44,7 +44,7 @@ export default function PrivacyPolicyPage() {
             2. Compartilhamento de Dados
           </h2>
           <p>
-            Seus dados nunca são vendidos ou repassados a terceiros para fins de marketing. O número de telefone e itens do pedido são processados de forma segura e criptografada via integradores de pagamento e mensagem (Stripe / WhatsApp).
+            Seus dados nunca são vendidos ou repassados a terceiros para fins de marketing. O número de telefone e itens do pedido são processados de forma segura e criptografada via integradores de pagamento e mensagem (Mercado Pago / WhatsApp).
           </p>
 
           <h2 className="font-display text-xl uppercase text-ink pt-2">

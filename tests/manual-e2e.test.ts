@@ -73,7 +73,7 @@ test('E2E Manual Verification Flow', async () => {
   expect(checkoutData.stripeSessionId).toBeDefined();
 
   // STEP 4: Consultar Status do Pedido
-  console.log('\n4. [GET /api/orders/status] Consultando status do pedido via Stripe Session ID...');
+  console.log('\n4. [GET /api/orders/status] Consultando status do pedido via Session ID...');
   const statusReq = new Request(`http://localhost:3000/api/orders/status?session_id=${checkoutData.stripeSessionId}`);
   const statusRes = await handleOrderStatus(statusReq);
   expect(statusRes.status).toBe(200);

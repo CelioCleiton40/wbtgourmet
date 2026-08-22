@@ -4,13 +4,13 @@
 ![React](https://img.shields.io/badge/React-19.2-blue?style=for-the-badge&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38bdf8?style=for-the-badge&logo=tailwindcss)
-![Stripe](https://img.shields.io/badge/Stripe-Checkout_Hosted-635BFF?style=for-the-badge&logo=stripe)
+![Mercado Pago](https://img.shields.io/badge/Mercado_Pago-Checkout_Pro-009EE3?style=for-the-badge&logo=mercadopago)
 ![Uber Direct](https://img.shields.io/badge/Uber_Direct-Delivery-000000?style=for-the-badge&logo=uber)
-![Vitest](https://img.shields.io/badge/Vitest-98_Tests_Passed-6E9F18?style=for-the-badge&logo=vitest)
+![Vitest](https://img.shields.io/badge/Vitest-Tests_Passed-6E9F18?style=for-the-badge&logo=vitest)
 ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase)
 ![Zod](https://img.shields.io/badge/Zod-Security_Validation-3E67B1?style=for-the-badge)
 
-Aplicação web moderna de cardápio digital, sistema transacional de pedidos seguro, integração com **Stripe Hosted Checkout**, **Uber Direct Delivery** e comunicação automatizada via WhatsApp / BotConversa para o **WBT Gourmet** (WBT Arena) em Mossoró-RN.
+Aplicação web moderna de cardápio digital, sistema transacional de pedidos seguro, integração com **Mercado Pago Checkout Pro (Pix e Cartão)**, **Uber Direct Delivery** e comunicação automatizada via WhatsApp / BotConversa para o **WBT Gourmet** (WBT Arena) em Mossoró-RN.
 
 Desenvolvido com **Clean Architecture**, **TDD (Test-Driven Development)**, **Transactional Outbox Pattern Worker**, **Next.js 16 (App Router + Turbopack)**, **React 19**, **Tailwind CSS v4**, **Supabase (PostgreSQL RPC & RLS)**, **Zod** e **Vitest**.
 
@@ -21,12 +21,12 @@ Desenvolvido com **Clean Architecture**, **TDD (Test-Driven Development)**, **Tr
 - [Visão Geral](#-visão-geral)
 - [✨ Principais Funcionalidades](#-principais-funcionalidades)
 - [🛡️ Arquitetura de Segurança do Checkout](#️-arquitetura-de-segurança-do-checkout)
-- [🚗 Fluxo Transacional: Stripe Hosted Page + Uber Direct](#-fluxo-transacional-stripe-hosted-page--uber-direct)
+- [🚗 Fluxo Transacional: Mercado Pago Checkout Pro + Uber Direct](#-fluxo-transacional-mercado-pago-checkout-pro--uber-direct)
 - [🏛️ Clean Architecture & Estrutura do Projeto](#️-clean-architecture--estrutura-do-projeto)
 - [🛢️ Banco de Dados & Outbox Pattern no Supabase](#️-banco-de-dados--outbox-pattern-no-supabase)
 - [🤖 Formatação para BotConversa & Agentes de IA](#-formatação-para-botconversa--agentes-de-ia)
 - [⚡ Desempenho & Benchmarks](#-desempenho--benchmarks)
-- [🧪 Suíte de Testes Automatizados (98 Testes)](#-suíte-de-testes-automatizados-98-testes)
+- [🧪 Suíte de Testes Automatizados](#-suíte-de-testes-automatizados)
 - [🔒 LGPD & Privacidade](#-lgpd--privacidade)
 - [🛠️ Tecnologias Utilizadas](#️-tecnologias-utilizadas)
 - [🚀 Como Executar o Projeto](#-como-executar-o-projeto)
@@ -39,7 +39,7 @@ Desenvolvido com **Clean Architecture**, **TDD (Test-Driven Development)**, **Tr
 
 O **WBT Gourmet** combina uma interface gastronômica impressionante com um backend resiliente construído sob os princípios da **Clean Architecture**, **SOLID** e **Transactional Outbox Pattern**.
 
-O sistema desacopla o pagamento do envio da entrega. O cliente adiciona itens ao carrinho, calcula o frete em tempo real via **Uber Direct API**, realiza o pagamento seguro em página hospedada pelo **Stripe**, e o despacho do entregador é acionado assincronamente por um worker resiliente (`/api/crons/process-outbox`), garantindo zero perda de dados e idempotência total.
+O sistema desacopla o pagamento do envio da entrega. O cliente adiciona itens ao carrinho, calcula a entrega em tempo real via **Uber Direct API**, realiza o pagamento seguro em página hospedada pelo **Mercado Pago** (Pix, Cartão ou saldo Mercado Livre), e o despacho do entregador é acionado assincronamente por um worker resiliente (`/api/crons/process-outbox`), garantindo zero perda de dados e idempotência total.
 
 ---
 
@@ -48,9 +48,9 @@ O sistema desacopla o pagamento do envio da entrega. O cliente adiciona itens ao
 - 📱 **Cardápio Interativo Otimizado**: Navegação suave por categorias, badges gastronômicas, horários de disponibilidade e busca instantânea.
 - 🛒 **Carrinho em Wizard de 2 Passos**:
   - **Passo 1**: Seleção de itens + WhatsApp para confirmação → criação da `Order` no servidor.
-  - **Passo 2**: Endereço de entrega + cotação de frete Uber Direct → redirecionamento para o Stripe Hosted Checkout.
-  - **Preservação do Carrinho**: O carrinho não é limpo ao ir para o Stripe; só é zerado após a confirmação real do pagamento.
-- 💳 **Stripe Hosted Checkout Page**: O pagamento ocorre em página segura do Stripe. O backend valida a assinatura HMAC dos webhooks e checa o valor exato pago antes de confirmar o pedido.
+  - **Passo 2**: Endereço de entrega + cotação de valor de entrega Uber Direct → redirecionamento para o Mercado Pago Checkout Pro.
+  - **Preservação do Carrinho**: O carrinho não é limpo ao ir para o pagamento; só é zerado após a confirmação real.
+- 💳 **Mercado Pago Checkout Pro**: O pagamento ocorre em ambiente seguro do Mercado Pago com Pix nativo instantâneo e cartões. O backend valida a assinatura HMAC dos webhooks e checa o valor exato pago antes de confirmar o pedido.
 - 🚚 **Cotação e Despacho Uber Direct**: Integração oficial com Uber Direct API para cotações dinâmicas por distância real, tratamento gracioso de raio de entrega (`DeliveryUndeliverableError`) e despacho automático via **Worker do Outbox Pattern** (`/api/crons/process-outbox`).
 - 🔄 **Polling Ativo de Status (`/checkout/success`)**: Página de retorno com consulta dinâmica (`GET /api/orders/status?session_id=...`), exibindo confirmação e link de rastreio em tempo real.
 - 💰 **Cálculo em Centavos Inteiros**: Representação monetária estrita via Value Object `Money`, eliminando erros de ponto flutuante.
@@ -249,8 +249,8 @@ npm test
 3. **Configurar as variáveis de ambiente (`.env.local`):**
    ```env
    NEXT_PUBLIC_BASE_URL=http://localhost:3000
-   STRIPE_SECRET_KEY=sk_test_...
-   STRIPE_WEBHOOK_SECRET=whsec_...
+   MERCADOPAGO_ACCESS_TOKEN=APP_USR_...
+   MERCADOPAGO_WEBHOOK_SECRET=...
    UBER_DIRECT_CLIENT_ID=...
    UBER_DIRECT_CLIENT_SECRET=...
    UBER_DIRECT_CUSTOMER_ID=...

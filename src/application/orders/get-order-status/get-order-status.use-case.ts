@@ -23,20 +23,24 @@ export class GetOrderStatusUseCase {
   ) {}
 
   public async execute(input: GetOrderStatusInput): Promise<GetOrderStatusOutput> {
-    // 1. Buscar a Checkout Session pelo ID do Stripe
+    // 1. Buscar a Checkout Session pelo ID da Session / Preferência
     const session = await this.checkoutSessionRepository.findByStripeSessionId(
       input.stripeSessionId
     );
 
-    if (!session) {
-      throw new Error(`Checkout Session "${input.stripeSessionId}" não encontrada.`);
+    let order = null;
+    if (session) {
+      order = await this.orderRepository.findById(session.orderId);
     }
 
-    // 2. Buscar o pedido pelo orderId da session
-    const order = await this.orderRepository.findById(session.orderId);
+    // 2. Se não encontrou pela session, tenta buscar diretamente pelo orderCode ou orderId
+    if (!order) {
+      order = (await this.orderRepository.findByOrderCode(input.stripeSessionId))
+        ?? (await this.orderRepository.findById(input.stripeSessionId));
+    }
 
     if (!order) {
-      throw new Error(`Pedido "${session.orderId}" não encontrado.`);
+      throw new Error(`Sessão ou Pedido "${input.stripeSessionId}" não encontrado.`);
     }
 
     return {
@@ -44,7 +48,6 @@ export class GetOrderStatusUseCase {
       status: order.status,
       totalCents: order.total.cents,
       deliveryFeeCents: order.deliveryFee.cents,
-      // trackingUrl e deliveryStatus serão preenchidos futuramente via delivery repository
     };
   }
 }

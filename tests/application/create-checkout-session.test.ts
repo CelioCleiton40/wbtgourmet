@@ -140,7 +140,7 @@ describe('CreateCheckoutSessionUseCase', () => {
 
     const result = await useCase.execute({ orderId: saved.orderCode.value });
 
-    expect(result.url).toContain('checkout.stripe.com');
+    expect(result.url).toContain('mercadopago.com.br');
     expect(result.stripeSessionId).toMatch(/^cs_fake_/);
     expect(result.amountCents).toBe(9000); // 2 × R$45,00
   });
@@ -160,7 +160,7 @@ describe('CreateCheckoutSessionUseCase', () => {
     const result = await useCase.execute({ orderId: saved.orderCode.value });
 
     expect(result.amountCents).toBe(10200); // 9000 + 1200
-    expect(result.url).toContain('checkout.stripe.com');
+    expect(result.url).toContain('mercadopago.com.br');
   });
 
   it('idempotência — retorna a mesma session se já existe uma aberta', async () => {
@@ -185,8 +185,8 @@ describe('CreateCheckoutSessionUseCase', () => {
     expect(sessionParams.successUrl).toContain('wbtgourmet.com.br/checkout/success');
     expect(sessionParams.cancelUrl).toContain('wbtgourmet.com.br/checkout/cancel');
     expect(sessionParams.successUrl).toContain('{CHECKOUT_SESSION_ID}');
-    // E que a resposta ao frontend contém apenas a URL do Stripe
-    expect(result.url).toContain('checkout.stripe.com');
+    // E que a resposta ao frontend contém apenas a URL do gateway
+    expect(result.url).toContain('mercadopago.com.br');
   });
 
   it('metadata da session contém order_id e order_code', async () => {

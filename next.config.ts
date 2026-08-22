@@ -9,15 +9,15 @@ const nextConfig: NextConfig = {
   async headers() {
     const cspHeader = `
       default-src 'self';
-      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://hcaptcha.com https://*.hcaptcha.com;
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com https://http2.mlstatic.com https://hcaptcha.com https://*.hcaptcha.com;
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       font-src 'self' https://fonts.gstatic.com data:;
       img-src 'self' data: blob: https:;
-      connect-src 'self' https://api.stripe.com https://viacep.com.br https://*.supabase.co;
-      frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://hcaptcha.com https://*.hcaptcha.com;
+      connect-src 'self' https://api.mercadopago.com https://viacep.com.br https://*.supabase.co;
+      frame-src 'self' https://www.mercadopago.com.br https://*.mercadopago.com https://hcaptcha.com https://*.hcaptcha.com;
       object-src 'none';
       base-uri 'self';
-      form-action 'self' https://checkout.stripe.com;
+      form-action 'self' https://www.mercadopago.com.br https://*.mercadopago.com;
     `.replace(/\s{2,}/g, ' ').trim();
 
     return [

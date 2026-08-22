@@ -14,7 +14,13 @@ const POLL_INTERVAL_MS = 3000;
 
 function CheckoutSuccessContent() {
   const searchParams   = useSearchParams();
-  const sessionId      = searchParams.get('session_id') ?? '';
+  const sessionId      =
+    searchParams.get('session_id') ||
+    searchParams.get('preference_id') ||
+    searchParams.get('payment_id') ||
+    searchParams.get('collection_id') ||
+    searchParams.get('external_reference') ||
+    '';
   const clearCart      = useCartStore((s) => s.clearCart);
   const [status, setStatus] = useState<PaymentStatus>('loading');
   const [orderCode, setOrderCode]   = useState('');

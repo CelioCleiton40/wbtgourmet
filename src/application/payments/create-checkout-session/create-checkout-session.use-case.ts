@@ -14,7 +14,7 @@ export interface CreateCheckoutSessionInput {
 }
 
 export interface CreateCheckoutSessionOutput {
-  /** URL da Stripe Hosted Page — único dado retornado ao frontend. */
+  /** URL da página segura de checkout — único dado retornado ao frontend. */
   url: string;
   stripeSessionId: string;
   amountCents: number;
@@ -96,7 +96,7 @@ export class CreateCheckoutSessionUseCase {
       const existing = await this.checkoutSessionRepository.findByOrderId(order.id);
       if (existing && existing.status === 'open') {
         return {
-          url: `https://checkout.stripe.com/c/pay/${existing.stripeSessionId}`,
+          url: `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${existing.stripeSessionId}`,
           stripeSessionId: existing.stripeSessionId,
           amountCents: existing.amountCents,
         };

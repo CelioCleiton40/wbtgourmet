@@ -10,9 +10,11 @@ const currency = new Intl.NumberFormat('pt-BR', {
 });
 
 export function StickyCta() {
-  const itemCount = useCartStore((s) => s.itemCount());
-  const total     = useCartStore((s) => s.total());
+  const items = useCartStore((s) => s.items);
   const openDrawer = useCartStore((s) => s.openDrawer);
+
+  const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
+  const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
   return (
     <AnimatePresence>

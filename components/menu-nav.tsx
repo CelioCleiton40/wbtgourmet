@@ -1,26 +1,27 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import type { MenuSection } from '@/data/menu';
 
 interface MenuNavProps {
   sections: MenuSection[];
 }
 
-function isSectionAvailable(section: MenuSection): boolean {
-  const today = new Date().getDay();
-  return section.items.some(
-    (item) => !item.availability || item.availability.days.includes(today)
-  );
-}
-
 export function MenuNav({ sections }: MenuNavProps) {
   const [activeSection, setActiveSection] = useState<string>('');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isUserClickRef = useRef<boolean>(false);
 
-  const availableSections = sections.filter(isSectionAvailable);
+  const availableSections = useMemo(() => {
+    const today = new Date().getDay();
+    return sections.filter((section) =>
+      section.items.some(
+        (item) => !item.availability || item.availability.days.includes(today)
+      )
+    );
+  }, [sections]);
 
-  /* Intersection Observer para destacar categoria ativa */
+  /* Intersection Observer para destacar categoria ativa durante o scroll */
   useEffect(() => {
     if (!availableSections.length) return;
 
@@ -32,35 +33,55 @@ export function MenuNav({ sections }: MenuNavProps) {
 
     const observer = new IntersectionObserver(
       (entries) => {
+        // Se o usuário acabou de clicar em uma categoria, não deixa o observer disputar
+        if (isUserClickRef.current) return;
+
         const visible = entries
           .filter((entry) => entry.isIntersecting)
           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
 
         if (visible[0]?.target.id) {
-          setActiveSection(visible[0].target.id);
+          setActiveSection((prev) => (prev === visible[0].target.id ? prev : visible[0].target.id));
         }
       },
-      { rootMargin: '-120px 0px -60% 0px', threshold: 0 }
+      { rootMargin: '-100px 0px -65% 0px', threshold: 0 }
     );
 
     elements.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
   }, [availableSections]);
 
-  /* Auto-scroll do chip ativo para o centro */
+  /* Auto-scroll horizontal do chip ativo DENTRO da barra (NUNCA usar scrollIntoView para não causar loop na janela) */
   useEffect(() => {
     if (!activeSection || !scrollRef.current) return;
-    const chip = scrollRef.current.querySelector<HTMLElement>(
-      `[data-section="${activeSection}"]`
-    );
+    const container = scrollRef.current;
+    const chip = container.querySelector<HTMLElement>(`[data-section="${activeSection}"]`);
+
     if (chip) {
-      chip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      const chipLeft = chip.offsetLeft;
+      const chipWidth = chip.offsetWidth;
+      const containerWidth = container.offsetWidth;
+      const targetScrollLeft = chipLeft - containerWidth / 2 + chipWidth / 2;
+
+      container.scrollTo({
+        left: Math.max(0, targetScrollLeft),
+        behavior: 'smooth',
+      });
     }
   }, [activeSection]);
 
   const scrollToSection = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    isUserClickRef.current = true;
     setActiveSection(id);
+
+    const target = document.getElementById(id);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    setTimeout(() => {
+      isUserClickRef.current = false;
+    }, 800);
   };
 
   return (

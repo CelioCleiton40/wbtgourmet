@@ -19,7 +19,7 @@ describe('CreatePaymentIntentUseCase (TDD com Fake)', () => {
     useCase = new CreatePaymentIntentUseCase(orderRepo, paymentGateway);
   });
 
-  it('deve gerar PaymentIntent no Stripe com valor idêntico ao total_cents do pedido', async () => {
+  it('deve gerar PaymentIntent no Gateway com valor idêntico ao total_cents do pedido', async () => {
     const order = Order.create({
       orderCode: OrderCode.create('WBT-8F42A1'),
       idempotencyKey: 'idemp-123',
@@ -42,7 +42,7 @@ describe('CreatePaymentIntentUseCase (TDD com Fake)', () => {
     expect(result.amountCents).toBe(9000); // 4500 * 2 = 9000
     expect(result.clientSecret).toBeDefined();
 
-    // Validar idempotência do Stripe
+    // Validar idempotência do gateway
     const intentParams = paymentGateway.intents.get(result.paymentIntentId);
     expect(intentParams?.idempotencyKey).toBe('WBT-8F42A1:payment');
   });

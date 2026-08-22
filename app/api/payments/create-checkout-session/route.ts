@@ -12,7 +12,7 @@ import {
 import { getOrderRepository } from '@/infrastructure/repositories/order-repository-factory';
 import { getDeliveryQuoteRepository } from '@/infrastructure/repositories/delivery-quote-repository-factory';
 import { getCheckoutSessionRepository } from '@/infrastructure/repositories/checkout-session-repository-factory';
-import { StripePaymentGateway } from '@/infrastructure/stripe/stripe-payment-gateway';
+import { getPaymentGateway } from '@/infrastructure/payments/payment-gateway-factory';
 import { Logger } from '@/shared/utils/logger';
 
 import { RateLimiter } from '@/shared/rate-limit/rate-limiter';
@@ -26,7 +26,6 @@ const checkoutSessionSchema = z
   })
   .strict();
 
-const stripePaymentGateway = new StripePaymentGateway();
 const checkoutRateLimiter = new RateLimiter(10, 60);
 
 export async function POST(request: Request) {
@@ -53,17 +52,18 @@ export async function POST(request: Request) {
     const orderRepo = getOrderRepository();
     const deliveryQuoteRepository = getDeliveryQuoteRepository();
     const checkoutSessionRepository = getCheckoutSessionRepository();
+    const paymentGateway = getPaymentGateway();
 
     const useCase = new CreateCheckoutSessionUseCase(
       orderRepo,
       deliveryQuoteRepository,
       checkoutSessionRepository,
-      stripePaymentGateway
+      paymentGateway
     );
 
     const result = await useCase.execute({ orderId, idempotencyKey });
 
-    Logger.info('Stripe Checkout Session criada com sucesso', {
+    Logger.info('Checkout Session (Mercado Pago / Stripe) criada com sucesso', {
       requestId,
       orderId,
       stripeSessionId: result.stripeSessionId,

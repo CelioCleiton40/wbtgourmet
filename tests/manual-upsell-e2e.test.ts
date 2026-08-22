@@ -68,7 +68,7 @@ describe('E2E Combo & Upsell Integration Flow with Database Verification', () =>
     expect(orderData.totalCents).toBe(6750);
     expect(orderData.orderCode).toMatch(/^WBT-[A-F0-9]{6}$/);
 
-    // 3. Criação de Checkout Session no Stripe
+    // 3. Criação de Checkout Session no Mercado Pago
     const sessionReq = new NextRequest('http://localhost:3000/api/payments/create-checkout-session', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

@@ -178,7 +178,7 @@ export function CartDrawer() {
     setStep('address');
   }
 
-  // ── Step 2a: Calcular frete ────────────────────────────────────────────────
+  // ── Step 2a: Calcular valor da entrega ────────────────────────────────────
   async function handleQuoteFee() {
     setError('');
     const cleanCep = address.postalCode.replace(/\D/g, '');
@@ -209,7 +209,7 @@ export function CartDrawer() {
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || 'Não foi possível calcular o frete.');
+        setError(data.error || 'Não foi possível calcular o valor da entrega.');
         return;
       }
 
@@ -217,22 +217,22 @@ export function CartDrawer() {
       setFeeCents(data.feeCents);
       setQuoteExpiry(new Date(data.expiresAt));
     } catch {
-      setError('Erro ao calcular frete. Tente novamente.');
+      setError('Erro ao calcular valor da entrega. Tente novamente.');
     } finally {
       setQuotingFee(false);
     }
   }
 
-  // ── Step 2b: Criar pedido + Iniciar Stripe Checkout ────────────────────────
-  async function handleGoToStripe() {
+  // ── Step 2b: Criar pedido + Iniciar Mercado Pago Checkout Pro ─────────────
+  async function handleGoToPayment() {
     if (!quoteId || feeCents === null) {
-      setError('Calcule o frete antes de continuar.');
+      setError('Calcule o valor da entrega antes de continuar.');
       return;
     }
 
     // Verificar se a cotação ainda está válida (15 min)
     if (quoteExpiry && new Date() > quoteExpiry) {
-      setError('A cotação de frete expirou. Recalcule o frete antes de continuar.');
+      setError('A cotação de entrega expirou. Recalcule antes de continuar.');
       setQuoteId('');
       setFeeCents(null);
       return;
@@ -247,7 +247,7 @@ export function CartDrawer() {
     setLoading(true);
     setError('');
     try {
-      // 1. Criar o pedido vinculando a cotação de frete oficial
+      // 1. Criar o pedido vinculando a cotação de entrega oficial
       const orderIdempotencyKey = crypto.randomUUID();
       const aggregatedItemsMap = new Map<string, number>();
       for (const item of items) {
@@ -275,7 +275,7 @@ export function CartDrawer() {
       const createdOrderId = orderData.orderId || orderData.orderCode;
       setOrderId(createdOrderId);
 
-      // 2. Criar a Checkout Session do Stripe com o pedido já contendo o frete
+      // 2. Criar a Checkout Session (Preferência Mercado Pago)
       const checkoutIdempotencyKey = crypto.randomUUID();
       const res = await fetch('/api/payments/create-checkout-session', {
         method: 'POST',
@@ -289,7 +289,7 @@ export function CartDrawer() {
       const data = await res.json();
       if (!res.ok) {
         if (res.status === 410) {
-          setError('O frete expirou. Recalcule antes de continuar.');
+          setError('A cotação de entrega expirou. Recalcule antes de continuar.');
           setQuoteId('');
           setFeeCents(null);
           return;
@@ -462,7 +462,7 @@ export function CartDrawer() {
                         </span>
                       </div>
                       <p className="text-[11px] text-g-faint">
-                        + frete calculado na próxima etapa
+                        + valor da entrega calculado na próxima etapa
                       </p>
 
                       <div className="space-y-2">
@@ -506,7 +506,7 @@ export function CartDrawer() {
                 </>
               )}
 
-              {/* ─── STEP 2: Endereço + Frete ─────────────────────────── */}
+              {/* ─── STEP 2: Endereço + Entrega ───────────────────────── */}
               {step === 'address' && (
                 <div className="mt-5 space-y-4">
                   {/* Resumo do pedido */}
@@ -585,13 +585,13 @@ export function CartDrawer() {
                     />
                   </div>
 
-                  {/* Frete */}
+                  {/* Valor da Entrega */}
                   {feeCents !== null ? (
                     <div className={`rounded-xl border p-3 ${isQuoteExpiringSoon ? 'border-amber-500/50 bg-amber-500/10' : 'border-g-green/30 bg-g-green/10'}`}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-sm text-g-green">
                           <Truck className="h-4 w-4" />
-                          <span className="font-semibold">Frete Uber Direct</span>
+                          <span className="font-semibold">Valor da sua entrega (Uber Direct)</span>
                         </div>
                         <span className="font-mono font-bold text-g-green">
                           {currency.format(feeCents / 100)}
@@ -619,12 +619,12 @@ export function CartDrawer() {
                       {quotingFee ? (
                         <span className="flex items-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          Calculando frete…
+                          Calculando valor da sua entrega…
                         </span>
                       ) : (
                         <span className="flex items-center gap-2">
                           <Truck className="h-4 w-4" />
-                          Calcular frete
+                          Calcular valor da entrega
                         </span>
                       )}
                     </Button>
@@ -640,7 +640,7 @@ export function CartDrawer() {
                   {feeCents !== null && (
                     <Button
                       id="pay-btn"
-                      onClick={handleGoToStripe}
+                      onClick={handleGoToPayment}
                       disabled={loading}
                       variant="primary"
                       size="lg"
@@ -653,7 +653,7 @@ export function CartDrawer() {
                         </span>
                       ) : (
                         <span className="flex items-center gap-2">
-                          Pagar com cartão
+                          Pagar com Pix ou Cartão
                           <ArrowRight className="h-4 w-4" />
                         </span>
                       )}
@@ -661,11 +661,11 @@ export function CartDrawer() {
                   )}
 
                   <p className="text-center text-[11px] text-g-faint">
-                    Você será redirecionado para a página segura do Stripe para inserir os dados do cartão.
+                    Você será redirecionado para o ambiente seguro do Mercado Pago para pagar com Pix, cartão ou saldo Mercado Livre.
                   </p>
                   <p className="flex justify-center items-center gap-1.5 text-[11px] text-g-faint">
                     <ShieldCheck className="h-3.5 w-3.5 text-g-green shrink-0" />
-                    Pagamento processado pelo Stripe — seus dados nunca passam pelo WBT Gourmet.
+                    Pagamento seguro processado pelo Mercado Pago.
                   </p>
                 </div>
               )}

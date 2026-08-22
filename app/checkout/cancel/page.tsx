@@ -5,11 +5,11 @@ import { ShoppingBag, ArrowLeft, Clock } from 'lucide-react';
 import Link from 'next/link';
 
 /**
- * Página de cancelamento do Stripe Checkout.
+ * Página de cancelamento do Checkout Pro (Mercado Pago).
  *
- * O usuário chegou aqui porque saiu da página do Stripe sem pagar.
+ * O usuário chegou aqui porque saiu da página de pagamento sem pagar.
  * O pedido NÃO é cancelado — apenas o redirect ocorreu.
- * O carrinho foi preservado (não limpamos ao redirecionar para o Stripe).
+ * O carrinho foi preservado (não limpamos ao redirecionar para o pagamento).
  */
 export default function CheckoutCancelPage() {
   return (

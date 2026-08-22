@@ -46,7 +46,7 @@ export class FakePaymentGateway implements PaymentGateway {
 
     return {
       stripeSessionId: sessionId,
-      url: `https://checkout.stripe.com/c/pay/${sessionId}`,
+      url: `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${sessionId}`,
       amountCents: totalCents,
       currency: 'brl',
       status: 'open',
@@ -58,7 +58,7 @@ export class FakePaymentGateway implements PaymentGateway {
     signature: string
   ): Promise<StripeWebhookEventData> {
     if (signature === 'invalid_sig') {
-      throw new Error('Assinatura do Webhook Stripe inválida.');
+      throw new Error('Assinatura do Webhook inválida.');
     }
 
     const payload = JSON.parse(rawBody);
